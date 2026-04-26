@@ -46,3 +46,5 @@ app.*.map.json
 
 # 민감한 키/ID 설정 파일
 lib/config.dart
+*.jks
+android/key.properties

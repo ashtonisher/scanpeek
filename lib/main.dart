@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'l10n/app_localizations.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:http/http.dart' as http;
 import 'package:mobile_scanner/mobile_scanner.dart';
@@ -23,6 +24,8 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'ScanPeek',
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
         useMaterial3: true,
@@ -336,9 +339,9 @@ class _ScannerPageState extends State<ScannerPage> with WidgetsBindingObserver {
   void _showAdNoticeSnackBar() {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('광고 시청 후 이동할 수 있습니다.'),
-        duration: Duration(milliseconds: 1500),
+      SnackBar(
+        content: Text(AppLocalizations.of(context)!.adNotice),
+        duration: const Duration(milliseconds: 1500),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -429,9 +432,9 @@ class _ScannerPageState extends State<ScannerPage> with WidgetsBindingObserver {
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 child: Column(
                   children: [
-                    const Text(
-                      'QR코드 또는 바코드를 화면에 맞춰주세요',
-                      style: TextStyle(color: Colors.white70, fontSize: 14),
+                    Text(
+                      AppLocalizations.of(context)!.scanGuide,
+                      style: const TextStyle(color: Colors.white70, fontSize: 14),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 8),
@@ -597,23 +600,24 @@ class _UrlPreviewSheetState extends State<UrlPreviewSheet> {
     // 위험하면 경고만 표시 — 사용자가 직접 닫기
   }
 
-  String _threatLabel(String? type) {
+  String _threatLabel(String? type, AppLocalizations l10n) {
     switch (type) {
       case 'MALWARE':
-        return '악성코드';
+        return l10n.threatMalware;
       case 'SOCIAL_ENGINEERING':
-        return '피싱/사기';
+        return l10n.threatPhishing;
       case 'UNWANTED_SOFTWARE':
-        return '유해 소프트웨어';
+        return l10n.threatUnwanted;
       case 'POTENTIALLY_HARMFUL_APPLICATION':
-        return '유해 앱';
+        return l10n.threatHarmfulApp;
       default:
-        return '위협';
+        return l10n.threatUnknown;
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final bottomPadding = MediaQuery.of(context).padding.bottom;
     return Padding(
       padding: EdgeInsets.fromLTRB(24, 24, 24, 24 + bottomPadding),
@@ -637,9 +641,9 @@ class _UrlPreviewSheetState extends State<UrlPreviewSheet> {
             children: [
               const Icon(Icons.link, color: Colors.indigo),
               const SizedBox(width: 8),
-              const Text(
-                'URL 스캔 결과',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              Text(
+                l10n.urlSheetTitle,
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const Spacer(),
               IconButton(
@@ -690,7 +694,7 @@ class _UrlPreviewSheetState extends State<UrlPreviewSheet> {
                     ),
                   ),
                   child: Text(
-                    _isSafe ? '✅ 안전' : '⚠️ 위험',
+                    _isSafe ? l10n.safe : l10n.danger,
                     style: TextStyle(
                       fontSize: 12,
                       color: _isSafe
@@ -723,8 +727,8 @@ class _UrlPreviewSheetState extends State<UrlPreviewSheet> {
               ),
               child: Text(
                 _isSafe
-                    ? 'Google Safe Browsing 검사 결과\n위험 요소가 발견되지 않았습니다.\n잠시 후 이동합니다...'
-                    : 'Google Safe Browsing 검사 결과\n${_threatLabel(_threatType)}이 감지되었습니다.\n방문을 권장하지 않습니다.',
+                    ? l10n.safeBrowsingResultSafe
+                    : l10n.safeBrowsingResultDanger(_threatLabel(_threatType, l10n)),
                 style: TextStyle(
                   fontSize: 13,
                   color: _isSafe ? Colors.green.shade800 : Colors.red.shade800,
@@ -742,9 +746,9 @@ class _UrlPreviewSheetState extends State<UrlPreviewSheet> {
                     Icons.warning_amber_rounded,
                     color: Colors.red,
                   ),
-                  label: const Text(
-                    '무시하고 이동하기',
-                    style: TextStyle(color: Colors.red),
+                  label: Text(
+                    l10n.ignoreAndOpen,
+                    style: const TextStyle(color: Colors.red),
                   ),
                 ),
               ),
@@ -767,7 +771,7 @@ class _UrlPreviewSheetState extends State<UrlPreviewSheet> {
                         ),
                       )
                     : const Icon(Icons.verified_user),
-                label: Text(_isChecking ? '검사 중...' : '🔒 안전 검사 후 열기'),
+                label: Text(_isChecking ? l10n.checking : l10n.safeOpenButton),
               ),
             ),
           const SizedBox(height: 8),
@@ -777,7 +781,7 @@ class _UrlPreviewSheetState extends State<UrlPreviewSheet> {
             child: TextButton.icon(
               onPressed: widget.onOpen,
               icon: const Icon(Icons.open_in_browser),
-              label: const Text('그냥 열기'),
+              label: Text(l10n.openAnywayButton),
               style: TextButton.styleFrom(foregroundColor: Colors.grey),
             ),
           ),
@@ -796,6 +800,7 @@ class TextResultSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final bottomPadding = MediaQuery.of(context).padding.bottom;
     return Padding(
       padding: EdgeInsets.fromLTRB(24, 24, 24, 24 + bottomPadding),
@@ -808,9 +813,9 @@ class TextResultSheet extends StatelessWidget {
             children: [
               const Icon(Icons.qr_code, color: Colors.indigo),
               const SizedBox(width: 8),
-              const Text(
-                '스캔 결과',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              Text(
+                l10n.textSheetTitle,
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const Spacer(),
               IconButton(icon: const Icon(Icons.close), onPressed: onClose),
@@ -831,7 +836,7 @@ class TextResultSheet extends StatelessWidget {
           const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
-            child: FilledButton(onPressed: onClose, child: const Text('닫기')),
+            child: FilledButton(onPressed: onClose, child: Text(l10n.closeButton)),
           ),
           const SizedBox(height: 8),
         ],

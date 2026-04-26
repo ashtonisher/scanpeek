@@ -1,4 +1,4 @@
-# qr_scanner
+# scanpeek
 
 A new Flutter project.
 

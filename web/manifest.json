@@ -1,6 +1,6 @@
 {
-    "name": "qr_scanner",
-    "short_name": "qr_scanner",
+    "name": "ScanPeek",
+    "short_name": "ScanPeek",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

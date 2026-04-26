@@ -1,0 +1,26 @@
+{
+  "@@locale": "ja",
+  "scanGuide": "QRコードまたはバーコードを枠内に合わせてください",
+  "adNotice": "広告を視聴後にリンクを開けます。",
+  "urlSheetTitle": "URLスキャン結果",
+  "textSheetTitle": "スキャン結果",
+  "safe": "✅ 安全",
+  "danger": "⚠️ 危険",
+  "threatMalware": "マルウェア",
+  "threatPhishing": "フィッシング／詐欺",
+  "threatUnwanted": "望ましくないソフトウェア",
+  "threatHarmfulApp": "有害アプリ",
+  "threatUnknown": "脅威",
+  "safeBrowsingResultSafe": "Google セーフブラウジング結果\n危険な要素は検出されませんでした。\nまもなく移動します...",
+  "safeBrowsingResultDanger": "Google セーフブラウジング結果\n{threat}が検出されました。\nこのサイトへの訪問はお勧めしません。",
+  "@safeBrowsingResultDanger": {
+    "placeholders": {
+      "threat": { "type": "String" }
+    }
+  },
+  "checking": "確認中...",
+  "safeOpenButton": "🔒 安全確認して開く",
+  "openAnywayButton": "そのまま開く",
+  "ignoreAndOpen": "警告を無視して開く",
+  "closeButton": "閉じる"
+}

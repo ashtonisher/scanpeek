@@ -1,0 +1,26 @@
+{
+  "@@locale": "ko",
+  "scanGuide": "QR코드 또는 바코드를 화면에 맞춰주세요",
+  "adNotice": "광고 시청 후 이동할 수 있습니다.",
+  "urlSheetTitle": "URL 스캔 결과",
+  "textSheetTitle": "스캔 결과",
+  "safe": "✅ 안전",
+  "danger": "⚠️ 위험",
+  "threatMalware": "악성코드",
+  "threatPhishing": "피싱/사기",
+  "threatUnwanted": "유해 소프트웨어",
+  "threatHarmfulApp": "유해 앱",
+  "threatUnknown": "위협",
+  "safeBrowsingResultSafe": "Google Safe Browsing 검사 결과\n위험 요소가 발견되지 않았습니다.\n잠시 후 이동합니다...",
+  "safeBrowsingResultDanger": "Google Safe Browsing 검사 결과\n{threat}이 감지되었습니다.\n방문을 권장하지 않습니다.",
+  "@safeBrowsingResultDanger": {
+    "placeholders": {
+      "threat": { "type": "String" }
+    }
+  },
+  "checking": "검사 중...",
+  "safeOpenButton": "🔒 안전 검사 후 열기",
+  "openAnywayButton": "그냥 열기",
+  "ignoreAndOpen": "무시하고 이동하기",
+  "closeButton": "닫기"
+}

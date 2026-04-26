@@ -1,0 +1,785 @@
+import 'dart:async';
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:http/http.dart' as http;
+import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'config.dart';
+
+void main() {
+  // Flutter 엔진 초기화 (카메라 같은 네이티브 기능 사용 전 필수)
+  WidgetsFlutterBinding.ensureInitialized();
+  // AdMob SDK 초기화
+  MobileAds.instance.initialize();
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'ScanPeek',
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
+        useMaterial3: true,
+      ),
+      home: const ScannerPage(),
+    );
+  }
+}
+
+// 스캔 메인 화면 — 카메라 뷰 + 결과 처리
+class ScannerPage extends StatefulWidget {
+  const ScannerPage({super.key});
+
+  @override
+  State<ScannerPage> createState() => _ScannerPageState();
+}
+
+class _ScannerPageState extends State<ScannerPage> with WidgetsBindingObserver {
+  // MobileScannerController: 카메라 시작/정지/플래시/전후면 전환 담당
+  final MobileScannerController _controller = MobileScannerController();
+
+  // 중복 감지 방지 플래그 — 바텀시트가 떠 있는 동안 추가 스캔 막기
+  bool _isScanning = true;
+
+  // 하단 배너 광고 — 스캔 화면에 항상 표시
+  BannerAd? _bannerAd;
+  bool _isBannerAdReady = false;
+
+  // 상단 배너 광고 — 바텀시트가 열릴 때만 표시 (하단 배너가 가려지는 보완)
+  BannerAd? _topBannerAd;
+  bool _isTopBannerAdReady = false;
+  bool _isSheetOpen = false;
+
+  // 전면 광고 — 10회 스캔마다 1번 표시
+  InterstitialAd? _interstitialAd;
+  int _scanCount = 0;
+  bool _isShowingAdForOpen = false;
+
+  // 안전 검사 크레딧 — SharedPreferences로 영구 저장
+  // 첫 설치 시 1개 무료, 이후 광고 시청마다 2개 지급, 사용마다 1개 차감
+  static const String _creditKey = 'safe_browse_credits';
+  int _safeCredits = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _loadBannerAd();
+    _loadTopBannerAd();
+    _loadInterstitialAd();
+    _loadCredits();
+  }
+
+  // 앱 생명주기 감지 — 브라우저에서 돌아올 때 카메라 재시작
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // 바텀시트가 닫힌 상태일 때만 카메라 재시작
+      if (!_isSheetOpen) {
+        _resumeScanning();
+      }
+    } else if (state == AppLifecycleState.inactive || state == AppLifecycleState.paused) {
+      _controller.stop();
+    }
+  }
+
+  Future<void> _loadCredits() async {
+    final prefs = await SharedPreferences.getInstance();
+    final isFirstLaunch = !prefs.containsKey(_creditKey);
+    if (isFirstLaunch) {
+      // 첫 설치 시 무료 크레딧 1개 지급
+      await prefs.setInt(_creditKey, 1);
+    }
+    if (!mounted) return;
+    setState(() => _safeCredits = prefs.getInt(_creditKey) ?? 0);
+  }
+
+  Future<void> _saveCredits(int credits) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_creditKey, credits);
+    if (!mounted) return;
+    setState(() => _safeCredits = credits);
+  }
+
+  void _loadBannerAd() {
+    _bannerAd = BannerAd(
+      adUnitId: bannerAdUnitId,
+      size: AdSize.banner,
+      request: const AdRequest(),
+      listener: BannerAdListener(
+        onAdLoaded: (_) => setState(() => _isBannerAdReady = true),
+        onAdFailedToLoad: (ad, error) => ad.dispose(),
+      ),
+    )..load();
+  }
+
+  void _loadTopBannerAd() {
+    _topBannerAd = BannerAd(
+      adUnitId: bannerAdUnitId,
+      size: AdSize.banner,
+      request: const AdRequest(),
+      listener: BannerAdListener(
+        onAdLoaded: (_) => setState(() => _isTopBannerAdReady = true),
+        onAdFailedToLoad: (ad, error) => ad.dispose(),
+      ),
+    )..load();
+  }
+
+  void _loadInterstitialAd() {
+    InterstitialAd.load(
+      adUnitId: interstitialAdUnitId,
+      request: const AdRequest(),
+      adLoadCallback: InterstitialAdLoadCallback(
+        onAdLoaded: (ad) {
+          _interstitialAd = ad;
+          // 전면 광고가 닫히면 다음 노출을 위해 다시 로드
+          _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
+            onAdDismissedFullScreenContent: (ad) {
+              ad.dispose();
+              _loadInterstitialAd();
+            },
+          );
+        },
+        onAdFailedToLoad: (error) => _interstitialAd = null,
+      ),
+    );
+  }
+
+  // 10회 스캔마다 전면 광고 조건 충족 여부 확인
+  bool _shouldShowInterstitialAd() {
+    _scanCount++;
+    return _scanCount % 2 == 0 && _interstitialAd != null;
+  }
+
+  // 전면 광고 표시 후 콜백 실행 — 광고 없으면 콜백 바로 실행
+  // blockBackButton: true면 광고 중 뒤로가기 막기 (이동하기용)
+  void _showInterstitialAdThen(VoidCallback onDone, {bool blockBackButton = false}) {
+    if (_interstitialAd == null) {
+      onDone();
+      return;
+    }
+    if (blockBackButton) setState(() => _isShowingAdForOpen = true);
+    _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
+      onAdDismissedFullScreenContent: (ad) {
+        ad.dispose();
+        if (blockBackButton) setState(() => _isShowingAdForOpen = false);
+        // onDone 먼저 실행 후 다음 광고 로드 (카메라 재개와 충돌 방지)
+        onDone();
+        _loadInterstitialAd();
+      },
+      onAdFailedToShowFullScreenContent: (ad, error) {
+        ad.dispose();
+        if (blockBackButton) setState(() => _isShowingAdForOpen = false);
+        onDone();
+        _loadInterstitialAd();
+      },
+    );
+    _interstitialAd!.show();
+    _interstitialAd = null;
+  }
+
+  // 바코드가 감지될 때마다 호출되는 콜백
+  void _onDetect(BarcodeCapture capture) {
+    if (!_isScanning) return; // 이미 처리 중이면 무시
+
+    final barcode = capture.barcodes.firstOrNull;
+    if (barcode == null || barcode.rawValue == null) return;
+
+    setState(() => _isScanning = false);
+    _controller.stop();
+
+    final value = barcode.rawValue!;
+    final valueLower = value.toLowerCase();
+    final isUrl = valueLower.startsWith('http://') || valueLower.startsWith('https://');
+    if (isUrl) {
+      final uri = Uri.parse(value);
+      final normalizedUrl = uri.replace(scheme: uri.scheme.toLowerCase(), host: uri.host.toLowerCase()).toString();
+      _showUrlPreview(normalizedUrl);
+    } else {
+      _showTextResult(value);
+    }
+  }
+
+  // URL 스캔 결과 — 도메인/경로 미리보기 바텀시트 표시
+  void _showUrlPreview(String url) {
+    final uri = Uri.parse(url);
+    setState(() => _isSheetOpen = true);
+    final shouldShowAd = _shouldShowInterstitialAd();
+    bool handledByButton = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => UrlPreviewSheet(
+        url: url,
+        domain: uri.host,
+        path: uri.path.isEmpty ? '/' : uri.path,
+        onOpen: () {
+          // 이동하기는 광고 없이 즉시 브라우저로 이동
+          handledByButton = true;
+          Navigator.pop(context);
+          _launchUrl(url);
+        },
+        onClose: () {
+          handledByButton = true;
+          Navigator.pop(context);
+          if (shouldShowAd) {
+            _showAdNoticeSnackBar();
+            _showInterstitialAdThen(_resumeScanning);
+          } else {
+            _resumeScanning();
+          }
+        },
+        onSafePreview: (onAdDone) => _handleSafePreview(url, onAdDone),
+      ),
+    ).then((_) {
+      if (!mounted) return;
+      setState(() => _isSheetOpen = false);
+      // 버튼으로 처리된 경우 중복 호출 방지 (뒤로가기로 닫은 경우에만 재개)
+      if (!handledByButton) _resumeScanning();
+    });
+  }
+
+  // 크레딧 있으면 즉시 검사, 없으면 보상형 광고 후 크레딧 2개 지급 후 검사
+  void _handleSafePreview(String url, VoidCallback onAdDone) {
+    if (_safeCredits > 0) {
+      // 크레딧 차감 후 즉시 검사
+      _saveCredits(_safeCredits - 1);
+      onAdDone();
+    } else {
+      // 크레딧 없음 → 광고 시청 후 크레딧 2개 지급 → 1개 차감 후 검사
+      _showRewardedAdForSheet(() {
+        _saveCredits(2 - 1); // 2개 지급 후 1개 즉시 사용
+        onAdDone();
+      });
+    }
+  }
+
+  // 보상형 광고 표시 → 완료 후 onAdDone 콜백 실행
+  void _showRewardedAdForSheet(VoidCallback onAdDone) {
+    RewardedAd.load(
+      adUnitId: rewardedAdUnitId,
+      request: const AdRequest(),
+      rewardedAdLoadCallback: RewardedAdLoadCallback(
+        onAdLoaded: (ad) {
+          ad.fullScreenContentCallback = FullScreenContentCallback(
+            onAdDismissedFullScreenContent: (ad) {
+              ad.dispose();
+              onAdDone();
+            },
+          );
+          // onUserEarnedReward는 리워드 지급 시점, onAdDismissedFullScreenContent는 닫힘 시점
+          // 로직은 반드시 onAdDismissedFullScreenContent에서만 처리 — 이중 호출 방지
+          ad.show(onUserEarnedReward: (adItem, reward) {});
+        },
+        onAdFailedToLoad: (error) {
+          debugPrint('보상형 광고 로드 실패: ${error.message}');
+          onAdDone();
+        },
+      ),
+    );
+  }
+
+  // 텍스트/바코드 스캔 결과 바텀시트 표시
+  void _showTextResult(String text) {
+    setState(() => _isSheetOpen = true);
+    final shouldShowAd = _shouldShowInterstitialAd();
+    bool handledByButton = false;
+
+    showModalBottomSheet(
+      context: context,
+      useSafeArea: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => TextResultSheet(
+        text: text,
+        onClose: () {
+          handledByButton = true;
+          Navigator.pop(context);
+          if (shouldShowAd) {
+            _showAdNoticeSnackBar();
+            _showInterstitialAdThen(_resumeScanning);
+          } else {
+            _resumeScanning();
+          }
+        },
+      ),
+    ).then((_) {
+      setState(() => _isSheetOpen = false);
+      if (!handledByButton) _resumeScanning();
+    });
+  }
+
+  // 전면 광고 표시 전 안내 스낵바
+  void _showAdNoticeSnackBar() {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('광고 시청 후 이동할 수 있습니다.'),
+        duration: Duration(milliseconds: 1500),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  // 외부 브라우저 앱으로 URL 열기
+  Future<void> _launchUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  // 바텀시트 닫힌 후 카메라 재개
+  void _resumeScanning() {
+    if (!mounted) return;
+    // 전면 광고 후 카메라가 검게 보이는 현상 방지를 위해 짧은 딜레이
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (!mounted) return;
+      setState(() => _isScanning = true);
+      _controller.start();
+    });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _controller.dispose();
+    _bannerAd?.dispose();
+    _topBannerAd?.dispose();
+    _interstitialAd?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // 이동하기 광고 중 뒤로가기 차단
+    return PopScope(
+      canPop: !_isShowingAdForOpen,
+      child: Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        title: Row(
+          children: [
+            Image.asset('assets/icon/app_icon.png', width: 28, height: 28),
+            const SizedBox(width: 8),
+            const Text('ScanPeek', style: TextStyle(color: Colors.white)),
+          ],
+        ),
+        actions: [
+          // 플래시 토글
+          IconButton(
+            icon: const Icon(Icons.flash_on, color: Colors.white),
+            onPressed: () => _controller.toggleTorch(),
+          ),
+          // 전면/후면 카메라 전환
+          IconButton(
+            icon: const Icon(Icons.flip_camera_ios, color: Colors.white),
+            onPressed: () => _controller.switchCamera(),
+          ),
+        ],
+      ),
+      body: SafeArea(
+        child: Column(
+          children: [
+            // 상단 배너 — 바텀시트가 열릴 때만 표시 (하단 배너 가림 보완)
+            if (_isSheetOpen && _isTopBannerAdReady && _topBannerAd != null)
+              SizedBox(
+                width: _topBannerAd!.size.width.toDouble(),
+                height: _topBannerAd!.size.height.toDouble(),
+                child: AdWidget(ad: _topBannerAd!),
+              ),
+            Expanded(
+              flex: 4,
+              child: Stack(
+                children: [
+                  // 카메라 프리뷰 + 스캔 엔진
+                  MobileScanner(
+                    controller: _controller,
+                    onDetect: _onDetect,
+                  ),
+                  // 반투명 스캔 가이드 박스 오버레이
+                  _ScanOverlay(),
+                ],
+              ),
+            ),
+            // 하단 안내 문구 + 배너 광고 영역
+            Container(
+              color: Colors.black,
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Column(
+                children: [
+                  const Text(
+                    'QR코드 또는 바코드를 화면에 맞춰주세요',
+                    style: TextStyle(color: Colors.white70, fontSize: 14),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  // 배너 광고 — 로드 완료 시 표시, 실패 시 빈 공간 없이 숨김
+                  if (_isBannerAdReady && _bannerAd != null)
+                    SizedBox(
+                      width: _bannerAd!.size.width.toDouble(),
+                      height: _bannerAd!.size.height.toDouble(),
+                      child: AdWidget(ad: _bannerAd!),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+      ),
+    );
+  }
+}
+
+// 스캔 가이드 사각형 오버레이
+class _ScanOverlay extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Container(
+        width: 250,
+        height: 250,
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.indigoAccent, width: 3),
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+    );
+  }
+}
+
+// URL 스캔 결과 바텀시트
+// - 이동하기: 즉시 브라우저
+// - 안전하게 이동하기(강조): 보상형 광고 → Safe Browsing 검사 → 인라인 결과 표시
+class UrlPreviewSheet extends StatefulWidget {
+  final String url;
+  final String domain;
+  final String path;
+  final VoidCallback onOpen;
+  final VoidCallback onClose;
+  final void Function(VoidCallback onAdDone) onSafePreview;
+
+  const UrlPreviewSheet({
+    super.key,
+    required this.url,
+    required this.domain,
+    required this.path,
+    required this.onOpen,
+    required this.onClose,
+    required this.onSafePreview,
+  });
+
+  @override
+  State<UrlPreviewSheet> createState() => _UrlPreviewSheetState();
+}
+
+class _UrlPreviewSheetState extends State<UrlPreviewSheet> {
+  BannerAd? _bannerAd;
+  bool _isBannerAdReady = false;
+
+  // Safe Browsing 검사 상태
+  bool _isChecking = false;       // 검사 중
+  bool _hasResult = false;        // 결과 있음
+  bool _isSafe = true;
+  String? _threatType;
+
+  @override
+  void initState() {
+    super.initState();
+    _bannerAd = BannerAd(
+      adUnitId: bannerAdUnitId,
+      size: AdSize.banner,
+      request: const AdRequest(),
+      listener: BannerAdListener(
+        onAdLoaded: (_) => setState(() => _isBannerAdReady = true),
+        onAdFailedToLoad: (ad, error) => ad.dispose(),
+      ),
+    )..load();
+  }
+
+  @override
+  void dispose() {
+    _bannerAd?.dispose();
+    super.dispose();
+  }
+
+  // 보상형 광고 요청 → 완료 후 Safe Browsing 검사
+  void _requestSafePreview() {
+    // 광고 시청 중이든 크레딧 사용 중이든 즉시 버튼 비활성화
+    setState(() => _isChecking = true);
+    widget.onSafePreview(() => _runSafeBrowsing());
+  }
+
+  // Google Safe Browsing API 검사
+  Future<void> _runSafeBrowsing() async {
+    if (!mounted) return;
+    setState(() {
+      _isChecking = true;
+      _hasResult = false;
+    });
+
+    bool isSafe = true;
+    String? threatType;
+
+    try {
+      final response = await http.post(
+        Uri.parse('https://safebrowsing.googleapis.com/v4/threatMatches:find?key=$safeBrowsingApiKey'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'client': {'clientId': 'com.gubog.scanpeek', 'clientVersion': '1.0.0'},
+          'threatInfo': {
+            'threatTypes': ['MALWARE', 'SOCIAL_ENGINEERING', 'UNWANTED_SOFTWARE', 'POTENTIALLY_HARMFUL_APPLICATION'],
+            'platformTypes': ['ANDROID'],
+            'threatEntryTypes': ['URL'],
+            'threatEntries': [{'url': widget.url}],
+          },
+        }),
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['matches'] != null && (data['matches'] as List).isNotEmpty) {
+          isSafe = false;
+          threatType = data['matches'][0]['threatType'];
+        }
+      }
+    } catch (_) {
+      // 네트워크 오류 시 안전으로 처리
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _isChecking = false;
+      _hasResult = true;
+      _isSafe = isSafe;
+      _threatType = threatType;
+    });
+
+    // 안전하면 잠깐 결과 보여준 후 자동 브라우저 이동
+    if (isSafe) {
+      await Future.delayed(const Duration(seconds: 1));
+      if (!mounted) return;
+      widget.onOpen();
+    }
+    // 위험하면 경고만 표시 — 사용자가 직접 닫기
+  }
+
+  String _threatLabel(String? type) {
+    switch (type) {
+      case 'MALWARE': return '악성코드';
+      case 'SOCIAL_ENGINEERING': return '피싱/사기';
+      case 'UNWANTED_SOFTWARE': return '유해 소프트웨어';
+      case 'POTENTIALLY_HARMFUL_APPLICATION': return '유해 앱';
+      default: return '위협';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+    return Padding(
+      padding: EdgeInsets.fromLTRB(24, 24, 24, 24 + bottomPadding),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 배너 광고 — 모달 상단 배치
+          if (_isBannerAdReady && _bannerAd != null) ...[
+            Center(
+              child: SizedBox(
+                width: _bannerAd!.size.width.toDouble(),
+                height: _bannerAd!.size.height.toDouble(),
+                child: AdWidget(ad: _bannerAd!),
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
+          // 시트 헤더
+          Row(
+            children: [
+              const Icon(Icons.link, color: Colors.indigo),
+              const SizedBox(width: 8),
+              const Text('URL 스캔 결과', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const Spacer(),
+              IconButton(icon: const Icon(Icons.close), onPressed: widget.onClose),
+            ],
+          ),
+          const Divider(),
+          const SizedBox(height: 8),
+          // 도메인 + 보안 배지 (검사 결과 있을 때만)
+          Row(
+            children: [
+              Icon(
+                _hasResult
+                    ? (_isSafe ? Icons.verified_user : Icons.warning_amber_rounded)
+                    : Icons.public,
+                size: 16,
+                color: _hasResult
+                    ? (_isSafe ? Colors.green : Colors.red)
+                    : Colors.grey,
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  widget.domain,
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              // 배지
+              if (_hasResult)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: _isSafe ? Colors.green.shade50 : Colors.red.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: _isSafe ? Colors.green : Colors.red,
+                    ),
+                  ),
+                  child: Text(
+                    _isSafe ? '✅ 안전' : '⚠️ 위험',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: _isSafe ? Colors.green.shade700 : Colors.red.shade700,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            widget.path,
+            style: const TextStyle(fontSize: 13, color: Colors.grey),
+            overflow: TextOverflow.ellipsis,
+          ),
+          // 검사 결과 인라인 표시
+          if (_hasResult) ...[
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: _isSafe ? Colors.green.shade50 : Colors.red.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: _isSafe ? Colors.green.shade200 : Colors.red.shade200),
+              ),
+              child: Text(
+                _isSafe
+                    ? 'Google Safe Browsing 검사 결과\n위험 요소가 발견되지 않았습니다.\n잠시 후 이동합니다...'
+                    : 'Google Safe Browsing 검사 결과\n${_threatLabel(_threatType)}이 감지되었습니다.\n방문을 권장하지 않습니다.',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: _isSafe ? Colors.green.shade800 : Colors.red.shade800,
+                ),
+              ),
+            ),
+            // 위험 사이트일 때만 무시하고 이동하기 버튼 표시
+            if (!_isSafe) ...[
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: TextButton.icon(
+                  onPressed: widget.onOpen,
+                  icon: const Icon(Icons.warning_amber_rounded, color: Colors.red),
+                  label: const Text('무시하고 이동하기', style: TextStyle(color: Colors.red)),
+                ),
+              ),
+            ],
+          ],
+          const SizedBox(height: 20),
+          // 안전하게 이동하기 — 강조 버튼 (결과 없을 때만 표시)
+          if (!_hasResult)
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: _isChecking ? null : _requestSafePreview,
+              icon: _isChecking
+                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : const Icon(Icons.verified_user),
+              label: Text(_isChecking ? '검사 중...' : '🔒 안전하게 이동하기 (무료)'),
+            ),
+          ),
+          const SizedBox(height: 8),
+          // 이동하기 — 보조 버튼 (TextButton)
+          SizedBox(
+            width: double.infinity,
+            child: TextButton.icon(
+              onPressed: widget.onOpen,
+              icon: const Icon(Icons.open_in_browser),
+              label: const Text('그냥 이동하기'),
+              style: TextButton.styleFrom(foregroundColor: Colors.grey),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// 텍스트/바코드 스캔 결과 바텀시트 — 결과를 그대로 표시 (텍스트 선택 복사 가능)
+class TextResultSheet extends StatelessWidget {
+  final String text;
+  final VoidCallback onClose;
+
+  const TextResultSheet({super.key, required this.text, required this.onClose});
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+    return Padding(
+      padding: EdgeInsets.fromLTRB(24, 24, 24, 24 + bottomPadding),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 시트 헤더
+          Row(
+            children: [
+              const Icon(Icons.qr_code, color: Colors.indigo),
+              const SizedBox(width: 8),
+              const Text('스캔 결과', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const Spacer(),
+              IconButton(icon: const Icon(Icons.close), onPressed: onClose),
+            ],
+          ),
+          const Divider(),
+          const SizedBox(height: 8),
+          // 스캔된 텍스트 (길게 눌러 복사 가능)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: SelectableText(text, style: const TextStyle(fontSize: 15)),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: onClose,
+              child: const Text('닫기'),
+            ),
+          ),
+          const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+}

@@ -84,7 +84,8 @@ class _ScannerPageState extends State<ScannerPage> with WidgetsBindingObserver {
       if (!_isSheetOpen) {
         _resumeScanning();
       }
-    } else if (state == AppLifecycleState.inactive || state == AppLifecycleState.paused) {
+    } else if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused) {
       _controller.stop();
     }
   }
@@ -139,12 +140,13 @@ class _ScannerPageState extends State<ScannerPage> with WidgetsBindingObserver {
         onAdLoaded: (ad) {
           _interstitialAd = ad;
           // 전면 광고가 닫히면 다음 노출을 위해 다시 로드
-          _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
-            onAdDismissedFullScreenContent: (ad) {
-              ad.dispose();
-              _loadInterstitialAd();
-            },
-          );
+          _interstitialAd!.fullScreenContentCallback =
+              FullScreenContentCallback(
+                onAdDismissedFullScreenContent: (ad) {
+                  ad.dispose();
+                  _loadInterstitialAd();
+                },
+              );
         },
         onAdFailedToLoad: (error) => _interstitialAd = null,
       ),
@@ -159,7 +161,10 @@ class _ScannerPageState extends State<ScannerPage> with WidgetsBindingObserver {
 
   // 전면 광고 표시 후 콜백 실행 — 광고 없으면 콜백 바로 실행
   // blockBackButton: true면 광고 중 뒤로가기 막기 (이동하기용)
-  void _showInterstitialAdThen(VoidCallback onDone, {bool blockBackButton = false}) {
+  void _showInterstitialAdThen(
+    VoidCallback onDone, {
+    bool blockBackButton = false,
+  }) {
     if (_interstitialAd == null) {
       onDone();
       return;
@@ -196,10 +201,16 @@ class _ScannerPageState extends State<ScannerPage> with WidgetsBindingObserver {
 
     final value = barcode.rawValue!;
     final valueLower = value.toLowerCase();
-    final isUrl = valueLower.startsWith('http://') || valueLower.startsWith('https://');
+    final isUrl =
+        valueLower.startsWith('http://') || valueLower.startsWith('https://');
     if (isUrl) {
       final uri = Uri.parse(value);
-      final normalizedUrl = uri.replace(scheme: uri.scheme.toLowerCase(), host: uri.host.toLowerCase()).toString();
+      final normalizedUrl = uri
+          .replace(
+            scheme: uri.scheme.toLowerCase(),
+            host: uri.host.toLowerCase(),
+          )
+          .toString();
       _showUrlPreview(normalizedUrl);
     } else {
       _showTextResult(value);
@@ -368,78 +379,75 @@ class _ScannerPageState extends State<ScannerPage> with WidgetsBindingObserver {
     return PopScope(
       canPop: !_isShowingAdForOpen,
       child: Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
         backgroundColor: Colors.black,
-        title: Row(
-          children: [
-            Image.asset('assets/icon/app_icon.png', width: 28, height: 28),
-            const SizedBox(width: 8),
-            const Text('ScanPeek', style: TextStyle(color: Colors.white)),
+        appBar: AppBar(
+          backgroundColor: Colors.black,
+          title: Row(
+            children: [
+              Image.asset('assets/icon/app_icon.png', width: 28, height: 28),
+              const SizedBox(width: 8),
+              const Text('ScanPeek', style: TextStyle(color: Colors.white)),
+            ],
+          ),
+          actions: [
+            // 플래시 토글
+            IconButton(
+              icon: const Icon(Icons.flash_on, color: Colors.white),
+              onPressed: () => _controller.toggleTorch(),
+            ),
+            // 전면/후면 카메라 전환
+            IconButton(
+              icon: const Icon(Icons.flip_camera_ios, color: Colors.white),
+              onPressed: () => _controller.switchCamera(),
+            ),
           ],
         ),
-        actions: [
-          // 플래시 토글
-          IconButton(
-            icon: const Icon(Icons.flash_on, color: Colors.white),
-            onPressed: () => _controller.toggleTorch(),
-          ),
-          // 전면/후면 카메라 전환
-          IconButton(
-            icon: const Icon(Icons.flip_camera_ios, color: Colors.white),
-            onPressed: () => _controller.switchCamera(),
-          ),
-        ],
-      ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // 상단 배너 — 바텀시트가 열릴 때만 표시 (하단 배너 가림 보완)
-            if (_isSheetOpen && _isTopBannerAdReady && _topBannerAd != null)
-              SizedBox(
-                width: _topBannerAd!.size.width.toDouble(),
-                height: _topBannerAd!.size.height.toDouble(),
-                child: AdWidget(ad: _topBannerAd!),
+        body: SafeArea(
+          child: Column(
+            children: [
+              // 상단 배너 — 바텀시트가 열릴 때만 표시 (하단 배너 가림 보완)
+              if (_isSheetOpen && _isTopBannerAdReady && _topBannerAd != null)
+                SizedBox(
+                  width: _topBannerAd!.size.width.toDouble(),
+                  height: _topBannerAd!.size.height.toDouble(),
+                  child: AdWidget(ad: _topBannerAd!),
+                ),
+              Expanded(
+                flex: 4,
+                child: Stack(
+                  children: [
+                    // 카메라 프리뷰 + 스캔 엔진
+                    MobileScanner(controller: _controller, onDetect: _onDetect),
+                    // 반투명 스캔 가이드 박스 오버레이
+                    _ScanOverlay(),
+                  ],
+                ),
               ),
-            Expanded(
-              flex: 4,
-              child: Stack(
-                children: [
-                  // 카메라 프리뷰 + 스캔 엔진
-                  MobileScanner(
-                    controller: _controller,
-                    onDetect: _onDetect,
-                  ),
-                  // 반투명 스캔 가이드 박스 오버레이
-                  _ScanOverlay(),
-                ],
-              ),
-            ),
-            // 하단 안내 문구 + 배너 광고 영역
-            Container(
-              color: Colors.black,
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              child: Column(
-                children: [
-                  const Text(
-                    'QR코드 또는 바코드를 화면에 맞춰주세요',
-                    style: TextStyle(color: Colors.white70, fontSize: 14),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 8),
-                  // 배너 광고 — 로드 완료 시 표시, 실패 시 빈 공간 없이 숨김
-                  if (_isBannerAdReady && _bannerAd != null)
-                    SizedBox(
-                      width: _bannerAd!.size.width.toDouble(),
-                      height: _bannerAd!.size.height.toDouble(),
-                      child: AdWidget(ad: _bannerAd!),
+              // 하단 안내 문구 + 배너 광고 영역
+              Container(
+                color: Colors.black,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Column(
+                  children: [
+                    const Text(
+                      'QR코드 또는 바코드를 화면에 맞춰주세요',
+                      style: TextStyle(color: Colors.white70, fontSize: 14),
+                      textAlign: TextAlign.center,
                     ),
-                ],
+                    const SizedBox(height: 8),
+                    // 배너 광고 — 로드 완료 시 표시, 실패 시 빈 공간 없이 숨김
+                    if (_isBannerAdReady && _bannerAd != null)
+                      SizedBox(
+                        width: _bannerAd!.size.width.toDouble(),
+                        height: _bannerAd!.size.height.toDouble(),
+                        child: AdWidget(ad: _bannerAd!),
+                      ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
       ),
     );
   }
@@ -492,8 +500,8 @@ class _UrlPreviewSheetState extends State<UrlPreviewSheet> {
   bool _isBannerAdReady = false;
 
   // Safe Browsing 검사 상태
-  bool _isChecking = false;       // 검사 중
-  bool _hasResult = false;        // 결과 있음
+  bool _isChecking = false; // 검사 중
+  bool _hasResult = false; // 결과 있음
   bool _isSafe = true;
   String? _threatType;
 
@@ -537,15 +545,27 @@ class _UrlPreviewSheetState extends State<UrlPreviewSheet> {
 
     try {
       final response = await http.post(
-        Uri.parse('https://safebrowsing.googleapis.com/v4/threatMatches:find?key=$safeBrowsingApiKey'),
+        Uri.parse(
+          'https://safebrowsing.googleapis.com/v4/threatMatches:find?key=$safeBrowsingApiKey',
+        ),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'client': {'clientId': 'com.gubog.scanpeek', 'clientVersion': '1.0.0'},
+          'client': {
+            'clientId': 'com.gubog.scanpeek',
+            'clientVersion': '1.0.0',
+          },
           'threatInfo': {
-            'threatTypes': ['MALWARE', 'SOCIAL_ENGINEERING', 'UNWANTED_SOFTWARE', 'POTENTIALLY_HARMFUL_APPLICATION'],
+            'threatTypes': [
+              'MALWARE',
+              'SOCIAL_ENGINEERING',
+              'UNWANTED_SOFTWARE',
+              'POTENTIALLY_HARMFUL_APPLICATION',
+            ],
             'platformTypes': ['ANDROID'],
             'threatEntryTypes': ['URL'],
-            'threatEntries': [{'url': widget.url}],
+            'threatEntries': [
+              {'url': widget.url},
+            ],
           },
         }),
       );
@@ -579,11 +599,16 @@ class _UrlPreviewSheetState extends State<UrlPreviewSheet> {
 
   String _threatLabel(String? type) {
     switch (type) {
-      case 'MALWARE': return '악성코드';
-      case 'SOCIAL_ENGINEERING': return '피싱/사기';
-      case 'UNWANTED_SOFTWARE': return '유해 소프트웨어';
-      case 'POTENTIALLY_HARMFUL_APPLICATION': return '유해 앱';
-      default: return '위협';
+      case 'MALWARE':
+        return '악성코드';
+      case 'SOCIAL_ENGINEERING':
+        return '피싱/사기';
+      case 'UNWANTED_SOFTWARE':
+        return '유해 소프트웨어';
+      case 'POTENTIALLY_HARMFUL_APPLICATION':
+        return '유해 앱';
+      default:
+        return '위협';
     }
   }
 
@@ -612,9 +637,15 @@ class _UrlPreviewSheetState extends State<UrlPreviewSheet> {
             children: [
               const Icon(Icons.link, color: Colors.indigo),
               const SizedBox(width: 8),
-              const Text('URL 스캔 결과', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const Text(
+                'URL 스캔 결과',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
               const Spacer(),
-              IconButton(icon: const Icon(Icons.close), onPressed: widget.onClose),
+              IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: widget.onClose,
+              ),
             ],
           ),
           const Divider(),
@@ -624,7 +655,9 @@ class _UrlPreviewSheetState extends State<UrlPreviewSheet> {
             children: [
               Icon(
                 _hasResult
-                    ? (_isSafe ? Icons.verified_user : Icons.warning_amber_rounded)
+                    ? (_isSafe
+                          ? Icons.verified_user
+                          : Icons.warning_amber_rounded)
                     : Icons.public,
                 size: 16,
                 color: _hasResult
@@ -635,14 +668,20 @@ class _UrlPreviewSheetState extends State<UrlPreviewSheet> {
               Expanded(
                 child: Text(
                   widget.domain,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
               // 배지
               if (_hasResult)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: _isSafe ? Colors.green.shade50 : Colors.red.shade50,
                     borderRadius: BorderRadius.circular(12),
@@ -654,7 +693,9 @@ class _UrlPreviewSheetState extends State<UrlPreviewSheet> {
                     _isSafe ? '✅ 안전' : '⚠️ 위험',
                     style: TextStyle(
                       fontSize: 12,
-                      color: _isSafe ? Colors.green.shade700 : Colors.red.shade700,
+                      color: _isSafe
+                          ? Colors.green.shade700
+                          : Colors.red.shade700,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -676,7 +717,9 @@ class _UrlPreviewSheetState extends State<UrlPreviewSheet> {
               decoration: BoxDecoration(
                 color: _isSafe ? Colors.green.shade50 : Colors.red.shade50,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: _isSafe ? Colors.green.shade200 : Colors.red.shade200),
+                border: Border.all(
+                  color: _isSafe ? Colors.green.shade200 : Colors.red.shade200,
+                ),
               ),
               child: Text(
                 _isSafe
@@ -695,8 +738,14 @@ class _UrlPreviewSheetState extends State<UrlPreviewSheet> {
                 width: double.infinity,
                 child: TextButton.icon(
                   onPressed: widget.onOpen,
-                  icon: const Icon(Icons.warning_amber_rounded, color: Colors.red),
-                  label: const Text('무시하고 이동하기', style: TextStyle(color: Colors.red)),
+                  icon: const Icon(
+                    Icons.warning_amber_rounded,
+                    color: Colors.red,
+                  ),
+                  label: const Text(
+                    '무시하고 이동하기',
+                    style: TextStyle(color: Colors.red),
+                  ),
                 ),
               ),
             ],
@@ -704,16 +753,23 @@ class _UrlPreviewSheetState extends State<UrlPreviewSheet> {
           const SizedBox(height: 20),
           // 안전하게 이동하기 — 강조 버튼 (결과 없을 때만 표시)
           if (!_hasResult)
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton.icon(
-              onPressed: _isChecking ? null : _requestSafePreview,
-              icon: _isChecking
-                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Icon(Icons.verified_user),
-              label: Text(_isChecking ? '검사 중...' : '🔒 안전하게 이동하기 (무료)'),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: _isChecking ? null : _requestSafePreview,
+                icon: _isChecking
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.verified_user),
+                label: Text(_isChecking ? '검사 중...' : '🔒 안전 검사 후 열기'),
+              ),
             ),
-          ),
           const SizedBox(height: 8),
           // 이동하기 — 보조 버튼 (TextButton)
           SizedBox(
@@ -721,7 +777,7 @@ class _UrlPreviewSheetState extends State<UrlPreviewSheet> {
             child: TextButton.icon(
               onPressed: widget.onOpen,
               icon: const Icon(Icons.open_in_browser),
-              label: const Text('그냥 이동하기'),
+              label: const Text('그냥 열기'),
               style: TextButton.styleFrom(foregroundColor: Colors.grey),
             ),
           ),
@@ -752,7 +808,10 @@ class TextResultSheet extends StatelessWidget {
             children: [
               const Icon(Icons.qr_code, color: Colors.indigo),
               const SizedBox(width: 8),
-              const Text('스캔 결과', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const Text(
+                '스캔 결과',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
               const Spacer(),
               IconButton(icon: const Icon(Icons.close), onPressed: onClose),
             ],
@@ -772,10 +831,7 @@ class TextResultSheet extends StatelessWidget {
           const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
-            child: FilledButton(
-              onPressed: onClose,
-              child: const Text('닫기'),
-            ),
+            child: FilledButton(onPressed: onClose, child: const Text('닫기')),
           ),
           const SizedBox(height: 8),
         ],

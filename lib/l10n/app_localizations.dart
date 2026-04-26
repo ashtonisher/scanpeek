@@ -171,7 +171,7 @@ abstract class AppLocalizations {
   /// No description provided for @safeBrowsingResultSafe.
   ///
   /// In en, this message translates to:
-  /// **'Google Safe Browsing result\nNo threats detected.\nRedirecting shortly...'**
+  /// **'No threats detected. Redirecting...'**
   String get safeBrowsingResultSafe;
 
   /// No description provided for @safeBrowsingResultDanger.

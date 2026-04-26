@@ -237,7 +237,6 @@ class _ScannerPageState extends State<ScannerPage> with WidgetsBindingObserver {
       builder: (context) => UrlPreviewSheet(
         url: url,
         domain: uri.host,
-        path: uri.path.isEmpty ? '/' : uri.path,
         onOpen: () {
           // 이동하기는 광고 없이 즉시 브라우저로 이동
           handledByButton = true;
@@ -479,7 +478,6 @@ class _ScanOverlay extends StatelessWidget {
 class UrlPreviewSheet extends StatefulWidget {
   final String url;
   final String domain;
-  final String path;
   final VoidCallback onOpen;
   final VoidCallback onClose;
   final void Function(VoidCallback onAdDone) onSafePreview;
@@ -488,7 +486,6 @@ class UrlPreviewSheet extends StatefulWidget {
     super.key,
     required this.url,
     required this.domain,
-    required this.path,
     required this.onOpen,
     required this.onClose,
     required this.onSafePreview,
@@ -507,6 +504,7 @@ class _UrlPreviewSheetState extends State<UrlPreviewSheet> {
   bool _hasResult = false; // 결과 있음
   bool _isSafe = true;
   String? _threatType;
+
 
   @override
   void initState() {
@@ -591,9 +589,7 @@ class _UrlPreviewSheetState extends State<UrlPreviewSheet> {
       _threatType = threatType;
     });
 
-    // 안전하면 잠깐 결과 보여준 후 자동 브라우저 이동
     if (isSafe) {
-      await Future.delayed(const Duration(seconds: 1));
       if (!mounted) return;
       widget.onOpen();
     }
@@ -653,39 +649,32 @@ class _UrlPreviewSheetState extends State<UrlPreviewSheet> {
             ],
           ),
           const Divider(),
-          const SizedBox(height: 8),
-          // 도메인 + 보안 배지 (검사 결과 있을 때만)
+          const SizedBox(height: 16),
+          // 파비콘 + 도메인
           Row(
             children: [
-              Icon(
-                _hasResult
-                    ? (_isSafe
-                          ? Icons.verified_user
-                          : Icons.warning_amber_rounded)
-                    : Icons.public,
-                size: 16,
-                color: _hasResult
-                    ? (_isSafe ? Colors.green : Colors.red)
-                    : Colors.grey,
+              ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: Image.network(
+                  'https://www.google.com/s2/favicons?domain=${widget.domain}&sz=64',
+                  width: 36,
+                  height: 36,
+                  errorBuilder: (_, _, _) =>
+                      const Icon(Icons.public, size: 36, color: Colors.grey),
+                ),
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   widget.domain,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              // 배지
+              // 안전/위험 배지
               if (_hasResult)
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 2,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: _isSafe ? Colors.green.shade50 : Colors.red.shade50,
                     borderRadius: BorderRadius.circular(12),
@@ -697,21 +686,14 @@ class _UrlPreviewSheetState extends State<UrlPreviewSheet> {
                     _isSafe ? l10n.safe : l10n.danger,
                     style: TextStyle(
                       fontSize: 12,
-                      color: _isSafe
-                          ? Colors.green.shade700
-                          : Colors.red.shade700,
+                      color: _isSafe ? Colors.green.shade700 : Colors.red.shade700,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
             ],
           ),
-          const SizedBox(height: 4),
-          Text(
-            widget.path,
-            style: const TextStyle(fontSize: 13, color: Colors.grey),
-            overflow: TextOverflow.ellipsis,
-          ),
+          const SizedBox(height: 8),
           // 검사 결과 인라인 표시
           if (_hasResult) ...[
             const SizedBox(height: 12),

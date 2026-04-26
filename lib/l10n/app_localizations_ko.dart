@@ -42,8 +42,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get threatUnknown => '위협';
 
   @override
-  String get safeBrowsingResultSafe =>
-      'Google Safe Browsing 검사 결과\n위험 요소가 발견되지 않았습니다.\n잠시 후 이동합니다...';
+  String get safeBrowsingResultSafe => '위험 요소가 없습니다. 이동 중...';
 
   @override
   String safeBrowsingResultDanger(String threat) {

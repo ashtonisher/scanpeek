@@ -11,7 +11,7 @@
   "threatUnwanted": "유해 소프트웨어",
   "threatHarmfulApp": "유해 앱",
   "threatUnknown": "위협",
-  "safeBrowsingResultSafe": "Google Safe Browsing 검사 결과\n위험 요소가 발견되지 않았습니다.\n잠시 후 이동합니다...",
+  "safeBrowsingResultSafe": "위험 요소가 없습니다. 이동 중...",
   "safeBrowsingResultDanger": "Google Safe Browsing 검사 결과\n{threat}이 감지되었습니다.\n방문을 권장하지 않습니다.",
   "@safeBrowsingResultDanger": {
     "placeholders": {

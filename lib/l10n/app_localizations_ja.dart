@@ -42,8 +42,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get threatUnknown => '脅威';
 
   @override
-  String get safeBrowsingResultSafe =>
-      'Google セーフブラウジング結果\n危険な要素は検出されませんでした。\nまもなく移動します...';
+  String get safeBrowsingResultSafe => '危険な要素は検出されませんでした。移動中...';
 
   @override
   String safeBrowsingResultDanger(String threat) {

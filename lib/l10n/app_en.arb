@@ -11,7 +11,7 @@
   "threatUnwanted": "Unwanted Software",
   "threatHarmfulApp": "Harmful App",
   "threatUnknown": "Threat",
-  "safeBrowsingResultSafe": "Google Safe Browsing result\nNo threats detected.\nRedirecting shortly...",
+  "safeBrowsingResultSafe": "No threats detected. Redirecting...",
   "safeBrowsingResultDanger": "Google Safe Browsing result\n{threat} detected.\nVisiting this site is not recommended.",
   "@safeBrowsingResultDanger": {
     "placeholders": {

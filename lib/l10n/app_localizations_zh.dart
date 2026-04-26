@@ -42,7 +42,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get threatUnknown => '威胁';
 
   @override
-  String get safeBrowsingResultSafe => 'Google 安全浏览检查结果\n未发现危险因素。\n即将跳转...';
+  String get safeBrowsingResultSafe => '未发现危险因素。即将跳转...';
 
   @override
   String safeBrowsingResultDanger(String threat) {

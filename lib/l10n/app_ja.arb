@@ -11,7 +11,7 @@
   "threatUnwanted": "望ましくないソフトウェア",
   "threatHarmfulApp": "有害アプリ",
   "threatUnknown": "脅威",
-  "safeBrowsingResultSafe": "Google セーフブラウジング結果\n危険な要素は検出されませんでした。\nまもなく移動します...",
+  "safeBrowsingResultSafe": "危険な要素は検出されませんでした。移動中...",
   "safeBrowsingResultDanger": "Google セーフブラウジング結果\n{threat}が検出されました。\nこのサイトへの訪問はお勧めしません。",
   "@safeBrowsingResultDanger": {
     "placeholders": {

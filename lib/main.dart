@@ -350,7 +350,7 @@ class _ScannerPageState extends State<ScannerPage> with WidgetsBindingObserver {
   Future<void> _launchUrl(String url) async {
     final uri = Uri.parse(url);
     if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+      await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
     }
   }
 

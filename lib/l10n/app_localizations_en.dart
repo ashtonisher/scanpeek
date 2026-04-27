@@ -9,7 +9,7 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get scanGuide => 'Align QR code or barcode within the frame';
+  String get scanGuide => 'Align QR code within the frame';
 
   @override
   String get adNotice => 'An ad will play before opening the link.';
@@ -21,10 +21,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get textSheetTitle => 'Scan Result';
 
   @override
-  String get safe => '✅ Safe';
+  String get safe => '✅ No Threats Detected';
 
   @override
-  String get danger => '⚠️ Danger';
+  String get danger => '⚠️ Threat Detected';
 
   @override
   String get threatMalware => 'Malware';
@@ -42,18 +42,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get threatUnknown => 'Threat';
 
   @override
-  String get safeBrowsingResultSafe => 'No threats detected. Redirecting...';
+  String get safeBrowsingResultSafe => 'No threats detected.';
 
   @override
   String safeBrowsingResultDanger(String threat) {
-    return 'Google Safe Browsing result\n$threat detected.\nVisiting this site is not recommended.';
+    return '$threat detected.\nVisiting this site is not recommended.';
   }
 
   @override
   String get checking => 'Checking...';
 
   @override
-  String get safeOpenButton => '🔒 Check & Open Safely';
+  String get safeOpenButton => '🔍 Check Link';
 
   @override
   String get openAnywayButton => 'Open Anyway';

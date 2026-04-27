@@ -105,7 +105,7 @@ abstract class AppLocalizations {
   /// No description provided for @scanGuide.
   ///
   /// In en, this message translates to:
-  /// **'Align QR code or barcode within the frame'**
+  /// **'Align QR code within the frame'**
   String get scanGuide;
 
   /// No description provided for @adNotice.
@@ -129,13 +129,13 @@ abstract class AppLocalizations {
   /// No description provided for @safe.
   ///
   /// In en, this message translates to:
-  /// **'✅ Safe'**
+  /// **'✅ No Threats Detected'**
   String get safe;
 
   /// No description provided for @danger.
   ///
   /// In en, this message translates to:
-  /// **'⚠️ Danger'**
+  /// **'⚠️ Threat Detected'**
   String get danger;
 
   /// No description provided for @threatMalware.
@@ -171,13 +171,13 @@ abstract class AppLocalizations {
   /// No description provided for @safeBrowsingResultSafe.
   ///
   /// In en, this message translates to:
-  /// **'No threats detected. Redirecting...'**
+  /// **'No threats detected.'**
   String get safeBrowsingResultSafe;
 
   /// No description provided for @safeBrowsingResultDanger.
   ///
   /// In en, this message translates to:
-  /// **'Google Safe Browsing result\n{threat} detected.\nVisiting this site is not recommended.'**
+  /// **'{threat} detected.\nVisiting this site is not recommended.'**
   String safeBrowsingResultDanger(String threat);
 
   /// No description provided for @checking.
@@ -189,7 +189,7 @@ abstract class AppLocalizations {
   /// No description provided for @safeOpenButton.
   ///
   /// In en, this message translates to:
-  /// **'🔒 Check & Open Safely'**
+  /// **'🔍 Check Link'**
   String get safeOpenButton;
 
   /// No description provided for @openAnywayButton.

@@ -1,25 +1,25 @@
 {
   "@@locale": "en",
-  "scanGuide": "Align QR code or barcode within the frame",
+  "scanGuide": "Align QR code within the frame",
   "adNotice": "An ad will play before opening the link.",
   "urlSheetTitle": "URL Scan Result",
   "textSheetTitle": "Scan Result",
-  "safe": "✅ Safe",
-  "danger": "⚠️ Danger",
+  "safe": "✅ No Threats Detected",
+  "danger": "⚠️ Threat Detected",
   "threatMalware": "Malware",
   "threatPhishing": "Phishing / Scam",
   "threatUnwanted": "Unwanted Software",
   "threatHarmfulApp": "Harmful App",
   "threatUnknown": "Threat",
-  "safeBrowsingResultSafe": "No threats detected. Redirecting...",
-  "safeBrowsingResultDanger": "Google Safe Browsing result\n{threat} detected.\nVisiting this site is not recommended.",
+  "safeBrowsingResultSafe": "No threats detected.",
+  "safeBrowsingResultDanger": "{threat} detected.\nVisiting this site is not recommended.",
   "@safeBrowsingResultDanger": {
     "placeholders": {
       "threat": { "type": "String" }
     }
   },
   "checking": "Checking...",
-  "safeOpenButton": "🔒 Check & Open Safely",
+  "safeOpenButton": "🔍 Check Link",
   "openAnywayButton": "Open Anyway",
   "ignoreAndOpen": "Ignore Warning & Open",
   "closeButton": "Close"

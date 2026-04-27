@@ -33,7 +33,7 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
-        <!-- AdMob App ID (테스트용 ID — 실제 출시 전 AdMob 콘솔에서 발급받은 ID로 교체) -->
+        <!-- AdMob App ID -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="ca-app-pub-7156572745062114~9118543395"/>

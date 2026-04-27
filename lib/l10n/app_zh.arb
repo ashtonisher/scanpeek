@@ -1,25 +1,25 @@
 {
   "@@locale": "zh",
-  "scanGuide": "请将二维码或条形码对准框内",
+  "scanGuide": "请将二维码对准框内",
   "adNotice": "观看广告后即可打开链接。",
   "urlSheetTitle": "URL 扫描结果",
   "textSheetTitle": "扫描结果",
-  "safe": "✅ 安全",
-  "danger": "⚠️ 危险",
+  "safe": "✅ 未检测到威胁",
+  "danger": "⚠️ 检测到威胁",
   "threatMalware": "恶意软件",
   "threatPhishing": "钓鱼/诈骗",
   "threatUnwanted": "有害软件",
   "threatHarmfulApp": "有害应用",
   "threatUnknown": "威胁",
-  "safeBrowsingResultSafe": "未发现危险因素。即将跳转...",
-  "safeBrowsingResultDanger": "Google 安全浏览检查结果\n检测到{threat}。\n不建议访问此网站。",
+  "safeBrowsingResultSafe": "未检测到威胁。",
+  "safeBrowsingResultDanger": "检测到{threat}。\n不建议访问此网站。",
   "@safeBrowsingResultDanger": {
     "placeholders": {
       "threat": { "type": "String" }
     }
   },
   "checking": "检查中...",
-  "safeOpenButton": "🔒 安全检查后打开",
+  "safeOpenButton": "🔍 检查链接",
   "openAnywayButton": "直接打开",
   "ignoreAndOpen": "忽略警告并打开",
   "closeButton": "关闭"

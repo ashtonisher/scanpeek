@@ -9,7 +9,7 @@ class AppLocalizationsKo extends AppLocalizations {
   AppLocalizationsKo([String locale = 'ko']) : super(locale);
 
   @override
-  String get scanGuide => 'QR코드 또는 바코드를 화면에 맞춰주세요';
+  String get scanGuide => 'QR 코드를 화면에 맞춰주세요';
 
   @override
   String get adNotice => '광고 시청 후 이동할 수 있습니다.';
@@ -21,10 +21,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get textSheetTitle => '스캔 결과';
 
   @override
-  String get safe => '✅ 안전';
+  String get safe => '✅ 위협 미탐지';
 
   @override
-  String get danger => '⚠️ 위험';
+  String get danger => '⚠️ 위험 감지';
 
   @override
   String get threatMalware => '악성코드';
@@ -42,24 +42,24 @@ class AppLocalizationsKo extends AppLocalizations {
   String get threatUnknown => '위협';
 
   @override
-  String get safeBrowsingResultSafe => '위험 요소가 없습니다. 이동 중...';
+  String get safeBrowsingResultSafe => '위협이 탐지되지 않았습니다. 이동 중...';
 
   @override
   String safeBrowsingResultDanger(String threat) {
-    return 'Google Safe Browsing 검사 결과\n$threat이 감지되었습니다.\n방문을 권장하지 않습니다.';
+    return '$threat이 감지되었습니다.\n방문을 권장하지 않습니다.';
   }
 
   @override
   String get checking => '검사 중...';
 
   @override
-  String get safeOpenButton => '🔒 안전 검사 후 열기';
+  String get safeOpenButton => '🔍 링크 검사하기';
 
   @override
   String get openAnywayButton => '그냥 열기';
 
   @override
-  String get ignoreAndOpen => '무시하고 이동하기';
+  String get ignoreAndOpen => '경고 무시하고 열기';
 
   @override
   String get closeButton => '닫기';

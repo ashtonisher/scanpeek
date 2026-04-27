@@ -9,7 +9,7 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
-  String get scanGuide => '请将二维码或条形码对准框内';
+  String get scanGuide => '请将二维码对准框内';
 
   @override
   String get adNotice => '观看广告后即可打开链接。';
@@ -21,10 +21,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get textSheetTitle => '扫描结果';
 
   @override
-  String get safe => '✅ 安全';
+  String get safe => '✅ 未检测到威胁';
 
   @override
-  String get danger => '⚠️ 危险';
+  String get danger => '⚠️ 检测到威胁';
 
   @override
   String get threatMalware => '恶意软件';
@@ -42,18 +42,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String get threatUnknown => '威胁';
 
   @override
-  String get safeBrowsingResultSafe => '未发现危险因素。即将跳转...';
+  String get safeBrowsingResultSafe => '未检测到威胁。';
 
   @override
   String safeBrowsingResultDanger(String threat) {
-    return 'Google 安全浏览检查结果\n检测到$threat。\n不建议访问此网站。';
+    return '检测到$threat。\n不建议访问此网站。';
   }
 
   @override
   String get checking => '检查中...';
 
   @override
-  String get safeOpenButton => '🔒 安全检查后打开';
+  String get safeOpenButton => '🔍 检查链接';
 
   @override
   String get openAnywayButton => '直接打开';

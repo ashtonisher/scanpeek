@@ -9,7 +9,7 @@ class AppLocalizationsJa extends AppLocalizations {
   AppLocalizationsJa([String locale = 'ja']) : super(locale);
 
   @override
-  String get scanGuide => 'QRコードまたはバーコードを枠内に合わせてください';
+  String get scanGuide => 'QRコードを枠内に合わせてください';
 
   @override
   String get adNotice => '広告を視聴後にリンクを開けます。';
@@ -21,10 +21,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get textSheetTitle => 'スキャン結果';
 
   @override
-  String get safe => '✅ 安全';
+  String get safe => '✅ 脅威未検出';
 
   @override
-  String get danger => '⚠️ 危険';
+  String get danger => '⚠️ 脅威検出';
 
   @override
   String get threatMalware => 'マルウェア';
@@ -42,18 +42,18 @@ class AppLocalizationsJa extends AppLocalizations {
   String get threatUnknown => '脅威';
 
   @override
-  String get safeBrowsingResultSafe => '危険な要素は検出されませんでした。移動中...';
+  String get safeBrowsingResultSafe => '脅威は検出されませんでした。';
 
   @override
   String safeBrowsingResultDanger(String threat) {
-    return 'Google セーフブラウジング結果\n$threatが検出されました。\nこのサイトへの訪問はお勧めしません。';
+    return '$threatが検出されました。\nこのサイトへの訪問はお勧めしません。';
   }
 
   @override
   String get checking => '確認中...';
 
   @override
-  String get safeOpenButton => '🔒 安全確認して開く';
+  String get safeOpenButton => '🔍 リンクを検査する';
 
   @override
   String get openAnywayButton => 'そのまま開く';

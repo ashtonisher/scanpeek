@@ -433,7 +433,10 @@ class _ScannerPageState extends State<ScannerPage> with WidgetsBindingObserver {
                   children: [
                     Text(
                       AppLocalizations.of(context)!.scanGuide,
-                      style: const TextStyle(color: Colors.white70, fontSize: 14),
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 14,
+                      ),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 8),
@@ -504,7 +507,6 @@ class _UrlPreviewSheetState extends State<UrlPreviewSheet> {
   bool _hasResult = false; // 결과 있음
   bool _isSafe = true;
   String? _threatType;
-
 
   @override
   void initState() {
@@ -639,7 +641,10 @@ class _UrlPreviewSheetState extends State<UrlPreviewSheet> {
               const SizedBox(width: 8),
               Text(
                 l10n.urlSheetTitle,
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const Spacer(),
               IconButton(
@@ -667,14 +672,20 @@ class _UrlPreviewSheetState extends State<UrlPreviewSheet> {
               Expanded(
                 child: Text(
                   widget.domain,
-                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                  ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
               // 안전/위험 배지
               if (_hasResult)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: _isSafe ? Colors.green.shade50 : Colors.red.shade50,
                     borderRadius: BorderRadius.circular(12),
@@ -686,7 +697,9 @@ class _UrlPreviewSheetState extends State<UrlPreviewSheet> {
                     _isSafe ? l10n.safe : l10n.danger,
                     style: TextStyle(
                       fontSize: 12,
-                      color: _isSafe ? Colors.green.shade700 : Colors.red.shade700,
+                      color: _isSafe
+                          ? Colors.green.shade700
+                          : Colors.red.shade700,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -710,7 +723,9 @@ class _UrlPreviewSheetState extends State<UrlPreviewSheet> {
               child: Text(
                 _isSafe
                     ? l10n.safeBrowsingResultSafe
-                    : l10n.safeBrowsingResultDanger(_threatLabel(_threatType, l10n)),
+                    : l10n.safeBrowsingResultDanger(
+                        _threatLabel(_threatType, l10n),
+                      ),
                 style: TextStyle(
                   fontSize: 13,
                   color: _isSafe ? Colors.green.shade800 : Colors.red.shade800,
@@ -797,7 +812,10 @@ class TextResultSheet extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 l10n.textSheetTitle,
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const Spacer(),
               IconButton(icon: const Icon(Icons.close), onPressed: onClose),
@@ -818,7 +836,10 @@ class TextResultSheet extends StatelessWidget {
           const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
-            child: FilledButton(onPressed: onClose, child: Text(l10n.closeButton)),
+            child: FilledButton(
+              onPressed: onClose,
+              child: Text(l10n.closeButton),
+            ),
           ),
           const SizedBox(height: 8),
         ],

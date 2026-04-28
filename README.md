@@ -1,11 +1,11 @@
 # ScanPeek
 
-QR코드 및 바코드 스캐너 앱. Google Safe Browsing API로 URL 안전 검사를 지원합니다.
+QR코드 스캐너 앱. Google Safe Browsing API로 URL 안전 검사를 지원합니다.
 
 ## 기능
 
-- QR코드 / 바코드 스캔
-- URL 스캔 시 도메인 + 파비콘 미리보기
+- QR코드 스캔
+- URL 스캔 시 도메인 미리보기
 - Google Safe Browsing API 연동 안전 검사
 - 위험 링크 경고 및 사용자 선택 이동
 - 크레딧 기반 안전 검사 (첫 설치 시 1개 무료, 광고 시청마다 충전)

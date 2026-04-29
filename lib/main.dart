@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'l10n/app_localizations.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -63,6 +65,11 @@ class _ScannerPageState extends State<ScannerPage> with WidgetsBindingObserver {
   InterstitialAd? _interstitialAd;
   int _scanCount = 0;
   bool _isShowingAdForOpen = false;
+
+  // 갤러리 이미지 분석 상태
+  bool _isAnalyzing = false;
+  bool _isAnalyzingFailed = false;
+  String? _analyzingImagePath;
 
   // 안전 검사 크레딧 — SharedPreferences로 영구 저장
   // 첫 설치 시 1개 무료, 이후 광고 시청마다 2개 지급, 사용마다 1개 차감
@@ -190,6 +197,66 @@ class _ScannerPageState extends State<ScannerPage> with WidgetsBindingObserver {
     );
     _interstitialAd!.show();
     _interstitialAd = null;
+  }
+
+  // 갤러리에서 이미지 선택 후 QR/바코드 분석
+  Future<void> _pickImageFromGallery() async {
+    // 이전 오버레이 상태 초기화 후 갤러리 열기
+    _dismissGalleryOverlay();
+
+    final picker = ImagePicker();
+    final file = await picker.pickImage(source: ImageSource.gallery);
+    if (file == null) return;
+
+    setState(() {
+      _isAnalyzing = true;
+      _isAnalyzingFailed = false;
+      _analyzingImagePath = file.path;
+    });
+
+    final capture = await _controller.analyzeImage(file.path);
+    if (!mounted) return;
+
+    final barcode = capture?.barcodes.firstOrNull;
+    if (barcode == null || barcode.rawValue == null) {
+      setState(() {
+        _isAnalyzing = false;
+        _isAnalyzingFailed = true;
+      });
+      return;
+    }
+
+    _dismissGalleryOverlay();
+    setState(() => _isScanning = false);
+    _controller.stop();
+
+    final value = barcode.rawValue!;
+    final valueLower = value.toLowerCase();
+    final isHttpUrl =
+        valueLower.startsWith('http://') || valueLower.startsWith('https://');
+    final isCustomScheme = !isHttpUrl && valueLower.contains('://');
+    if (isHttpUrl) {
+      final uri = Uri.parse(value);
+      final normalizedUrl = uri
+          .replace(
+            scheme: uri.scheme.toLowerCase(),
+            host: uri.host.toLowerCase(),
+          )
+          .toString();
+      _showUrlPreview(normalizedUrl, showSafePreview: true);
+    } else if (isCustomScheme) {
+      _showUrlPreview(value, showSafePreview: false);
+    } else {
+      _showTextResult(value);
+    }
+  }
+
+  void _dismissGalleryOverlay() {
+    setState(() {
+      _isAnalyzing = false;
+      _isAnalyzingFailed = false;
+      _analyzingImagePath = null;
+    });
   }
 
   // 바코드가 감지될 때마다 호출되는 콜백
@@ -381,9 +448,14 @@ class _ScannerPageState extends State<ScannerPage> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    // 이동하기 광고 중 뒤로가기 차단
+    // 이동하기 광고 중 뒤로가기 차단 / 갤러리 오버레이 중 뒤로가기로 닫기
     return PopScope(
-      canPop: !_isShowingAdForOpen,
+      canPop: !_isShowingAdForOpen && !_isAnalyzing && !_isAnalyzingFailed,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && (_isAnalyzing || _isAnalyzingFailed)) {
+          _dismissGalleryOverlay();
+        }
+      },
       child: Scaffold(
         backgroundColor: Colors.black,
         appBar: AppBar(
@@ -396,6 +468,11 @@ class _ScannerPageState extends State<ScannerPage> with WidgetsBindingObserver {
             ],
           ),
           actions: [
+            // 갤러리에서 이미지 선택
+            IconButton(
+              icon: const Icon(Icons.photo_library, color: Colors.white),
+              onPressed: _pickImageFromGallery,
+            ),
             // 플래시 토글
             IconButton(
               icon: const Icon(Icons.flash_on, color: Colors.white),
@@ -426,6 +503,15 @@ class _ScannerPageState extends State<ScannerPage> with WidgetsBindingObserver {
                     MobileScanner(controller: _controller, onDetect: _onDetect),
                     // 반투명 스캔 가이드 박스 오버레이
                     _ScanOverlay(),
+                    // 갤러리 이미지 분석 중 오버레이
+                    if ((_isAnalyzing || _isAnalyzingFailed) &&
+                        _analyzingImagePath != null)
+                      _GalleryAnalyzingOverlay(
+                        imagePath: _analyzingImagePath!,
+                        isFailed: _isAnalyzingFailed,
+                        onDismiss: _dismissGalleryOverlay,
+                        onRetry: _pickImageFromGallery,
+                      ),
                   ],
                 ),
               ),
@@ -474,6 +560,187 @@ class _ScanOverlay extends StatelessWidget {
           border: Border.all(color: Colors.indigoAccent, width: 3),
           borderRadius: BorderRadius.circular(12),
         ),
+      ),
+    );
+  }
+}
+
+// 갤러리 이미지 분석 중 오버레이 — 선택한 이미지 미리보기 + 스캔 애니메이션
+class _GalleryAnalyzingOverlay extends StatefulWidget {
+  final String imagePath;
+  final bool isFailed;
+  final VoidCallback onDismiss;
+  final VoidCallback onRetry;
+  const _GalleryAnalyzingOverlay({
+    required this.imagePath,
+    required this.onDismiss,
+    required this.onRetry,
+    this.isFailed = false,
+  });
+
+  @override
+  State<_GalleryAnalyzingOverlay> createState() =>
+      _GalleryAnalyzingOverlayState();
+}
+
+class _GalleryAnalyzingOverlayState extends State<_GalleryAnalyzingOverlay>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animController;
+  late Animation<double> _scanLine;
+  double _opacity = 1.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat(reverse: true);
+    _scanLine = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animController, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void didUpdateWidget(_GalleryAnalyzingOverlay oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 실패 상태가 끝나면 페이드아웃
+    if (oldWidget.isFailed && !widget.isFailed) {
+      setState(() => _opacity = 0.0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedOpacity(
+      opacity: _opacity,
+      duration: const Duration(milliseconds: 300),
+      child: Stack(
+        children: [
+          // 이미지가 카메라 뷰 전체를 채움
+          Positioned.fill(
+            child: Image.file(File(widget.imagePath), fit: BoxFit.cover),
+          ),
+          if (!widget.isFailed)
+            // 스캔 라인
+            AnimatedBuilder(
+              animation: _scanLine,
+              builder: (_, _) => Positioned(
+                top:
+                    _scanLine.value *
+                    (MediaQuery.of(context).size.height * 0.5),
+                left: 0,
+                right: 0,
+                child: Container(
+                  height: 2,
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.transparent,
+                        Colors.indigoAccent,
+                        Colors.transparent,
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          if (widget.isFailed)
+            // 실패 시 반투명 오버레이
+            Container(
+              color: Colors.black.withAlpha(160),
+              child: Stack(
+                children: [
+                  // 아이콘 + 문구 — 정중앙
+                  Positioned.fill(
+                    child: Align(
+                      alignment: Alignment.center,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.qr_code_scanner,
+                            color: Colors.redAccent,
+                            size: 80,
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            AppLocalizations.of(context)!.galleryNoQrFound,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Colors.redAccent,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  // 버튼 — 하단 고정
+                  Positioned(
+                    bottom: 48,
+                    left: 24,
+                    right: 24,
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: widget.onDismiss,
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              side: const BorderSide(color: Colors.white54),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 14,
+                              ),
+                            ),
+                            child: const Text('닫기', style: TextStyle(fontSize: 16)),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: FilledButton(
+                            onPressed: widget.onRetry,
+                            style: FilledButton.styleFrom(
+                              backgroundColor: Colors.indigo,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 14,
+                              ),
+                            ),
+                            child: const Text('갤러리', style: TextStyle(fontSize: 16)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          // 분석 중 텍스트 (하단 고정)
+          if (!widget.isFailed)
+            Positioned(
+              bottom: 24,
+              left: 0,
+              right: 0,
+              child: Text(
+                AppLocalizations.of(context)!.galleryAnalyzing,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  shadows: [Shadow(color: Colors.black, blurRadius: 4)],
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

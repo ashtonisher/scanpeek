@@ -22,5 +22,7 @@
   "safeOpenButton": "🔍 检查链接",
   "openAnywayButton": "直接打开",
   "ignoreAndOpen": "忽略警告并打开",
-  "closeButton": "关闭"
+  "closeButton": "关闭",
+  "galleryNoQrFound": "在此图片中找不到二维码。",
+  "galleryAnalyzing": "正在解析二维码..."
 }

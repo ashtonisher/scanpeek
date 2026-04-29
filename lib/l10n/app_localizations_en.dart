@@ -63,4 +63,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get closeButton => 'Close';
+
+  @override
+  String get galleryNoQrFound => 'No QR code found in this image.';
+
+  @override
+  String get galleryAnalyzing => 'Analyzing QR code...';
 }

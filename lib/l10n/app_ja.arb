@@ -22,5 +22,7 @@
   "safeOpenButton": "🔍 リンクを検査する",
   "openAnywayButton": "そのまま開く",
   "ignoreAndOpen": "警告を無視して開く",
-  "closeButton": "閉じる"
+  "closeButton": "閉じる",
+  "galleryNoQrFound": "画像からQRコードが見つかりませんでした。",
+  "galleryAnalyzing": "QRコードを解析中..."
 }

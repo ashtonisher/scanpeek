@@ -63,4 +63,10 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get closeButton => '关闭';
+
+  @override
+  String get galleryNoQrFound => '在此图片中找不到二维码。';
+
+  @override
+  String get galleryAnalyzing => '正在解析二维码...';
 }

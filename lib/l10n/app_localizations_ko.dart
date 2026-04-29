@@ -63,4 +63,10 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get closeButton => '닫기';
+
+  @override
+  String get galleryNoQrFound => '이미지에서 QR코드를 찾을 수 없어요.';
+
+  @override
+  String get galleryAnalyzing => 'QR코드 분석 중...';
 }

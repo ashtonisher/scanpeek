@@ -63,4 +63,10 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get closeButton => '閉じる';
+
+  @override
+  String get galleryNoQrFound => '画像からQRコードが見つかりませんでした。';
+
+  @override
+  String get galleryAnalyzing => 'QRコードを解析中...';
 }

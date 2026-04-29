@@ -209,6 +209,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Close'**
   String get closeButton;
+
+  /// No description provided for @galleryNoQrFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No QR code found in this image.'**
+  String get galleryNoQrFound;
+
+  /// No description provided for @galleryAnalyzing.
+  ///
+  /// In en, this message translates to:
+  /// **'Analyzing QR code...'**
+  String get galleryAnalyzing;
 }
 
 class _AppLocalizationsDelegate

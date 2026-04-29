@@ -22,5 +22,7 @@
   "safeOpenButton": "🔍 Check Link",
   "openAnywayButton": "Open Anyway",
   "ignoreAndOpen": "Ignore Warning & Open",
-  "closeButton": "Close"
+  "closeButton": "Close",
+  "galleryNoQrFound": "No QR code found in this image.",
+  "galleryAnalyzing": "Analyzing QR code..."
 }

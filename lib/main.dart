@@ -204,9 +204,10 @@ class _ScannerPageState extends State<ScannerPage> with WidgetsBindingObserver {
 
     final value = barcode.rawValue!;
     final valueLower = value.toLowerCase();
-    final isUrl =
+    final isHttpUrl =
         valueLower.startsWith('http://') || valueLower.startsWith('https://');
-    if (isUrl) {
+    final isCustomScheme = !isHttpUrl && valueLower.contains('://');
+    if (isHttpUrl) {
       final uri = Uri.parse(value);
       final normalizedUrl = uri
           .replace(
@@ -214,14 +215,16 @@ class _ScannerPageState extends State<ScannerPage> with WidgetsBindingObserver {
             host: uri.host.toLowerCase(),
           )
           .toString();
-      _showUrlPreview(normalizedUrl);
+      _showUrlPreview(normalizedUrl, showSafePreview: true);
+    } else if (isCustomScheme) {
+      _showUrlPreview(value, showSafePreview: false);
     } else {
       _showTextResult(value);
     }
   }
 
   // URL 스캔 결과 — 도메인/경로 미리보기 바텀시트 표시
-  void _showUrlPreview(String url) {
+  void _showUrlPreview(String url, {required bool showSafePreview}) {
     final uri = Uri.parse(url);
     setState(() => _isSheetOpen = true);
     final shouldShowAd = _shouldShowInterstitialAd();
@@ -236,9 +239,8 @@ class _ScannerPageState extends State<ScannerPage> with WidgetsBindingObserver {
       ),
       builder: (context) => UrlPreviewSheet(
         url: url,
-        domain: uri.host,
+        domain: uri.host.isNotEmpty ? uri.host : uri.scheme,
         onOpen: () {
-          // 이동하기는 광고 없이 즉시 브라우저로 이동
           handledByButton = true;
           Navigator.pop(context);
           _launchUrl(url);
@@ -253,7 +255,9 @@ class _ScannerPageState extends State<ScannerPage> with WidgetsBindingObserver {
             _resumeScanning();
           }
         },
-        onSafePreview: (onAdDone) => _handleSafePreview(url, onAdDone),
+        onSafePreview: showSafePreview
+            ? (onAdDone) => _handleSafePreview(url, onAdDone)
+            : null,
       ),
     ).then((_) {
       if (!mounted) return;
@@ -483,7 +487,7 @@ class UrlPreviewSheet extends StatefulWidget {
   final String domain;
   final VoidCallback onOpen;
   final VoidCallback onClose;
-  final void Function(VoidCallback onAdDone) onSafePreview;
+  final void Function(VoidCallback onAdDone)? onSafePreview;
 
   const UrlPreviewSheet({
     super.key,
@@ -491,7 +495,7 @@ class UrlPreviewSheet extends StatefulWidget {
     required this.domain,
     required this.onOpen,
     required this.onClose,
-    required this.onSafePreview,
+    this.onSafePreview,
   });
 
   @override
@@ -532,7 +536,7 @@ class _UrlPreviewSheetState extends State<UrlPreviewSheet> {
   void _requestSafePreview() {
     // 광고 시청 중이든 크레딧 사용 중이든 즉시 버튼 비활성화
     setState(() => _isChecking = true);
-    widget.onSafePreview(() => _runSafeBrowsing());
+    widget.onSafePreview!(() => _runSafeBrowsing());
   }
 
   // Google Safe Browsing API 검사
@@ -752,8 +756,8 @@ class _UrlPreviewSheetState extends State<UrlPreviewSheet> {
             ],
           ],
           const SizedBox(height: 20),
-          // 안전하게 이동하기 — 강조 버튼 (결과 없을 때만 표시)
-          if (!_hasResult)
+          // 안전하게 이동하기 — 강조 버튼 (결과 없을 때, 커스텀 스키마 아닐 때만 표시)
+          if (!_hasResult && widget.onSafePreview != null)
             SizedBox(
               width: double.infinity,
               child: FilledButton.icon(

@@ -488,12 +488,14 @@ class _ScannerPageState extends State<ScannerPage> with WidgetsBindingObserver {
         body: SafeArea(
           child: Column(
             children: [
-              // 상단 배너 — 바텀시트가 열릴 때만 표시 (하단 배너 가림 보완)
-              if (_isSheetOpen && _isTopBannerAdReady && _topBannerAd != null)
+              // 상단 배너 — 바텀시트가 열릴 때 영역 확보 (광고 로드 전에도 높이 유지)
+              if (_isSheetOpen)
                 SizedBox(
-                  width: _topBannerAd!.size.width.toDouble(),
-                  height: _topBannerAd!.size.height.toDouble(),
-                  child: AdWidget(ad: _topBannerAd!),
+                  width: double.infinity,
+                  height: 50,
+                  child: (_isTopBannerAdReady && _topBannerAd != null)
+                      ? AdWidget(ad: _topBannerAd!)
+                      : const SizedBox.shrink(),
                 ),
               Expanded(
                 flex: 4,
@@ -530,13 +532,14 @@ class _ScannerPageState extends State<ScannerPage> with WidgetsBindingObserver {
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 8),
-                    // 배너 광고 — 로드 완료 시 표시, 실패 시 빈 공간 없이 숨김
-                    if (_isBannerAdReady && _bannerAd != null)
-                      SizedBox(
-                        width: _bannerAd!.size.width.toDouble(),
-                        height: _bannerAd!.size.height.toDouble(),
-                        child: AdWidget(ad: _bannerAd!),
-                      ),
+                    // 광고 영역 — 로드 전에도 높이 확보해서 카메라 영역 떨림 방지
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: (_isBannerAdReady && _bannerAd != null)
+                          ? AdWidget(ad: _bannerAd!)
+                          : const SizedBox.shrink(),
+                    ),
                   ],
                 ),
               ),
@@ -894,17 +897,15 @@ class _UrlPreviewSheetState extends State<UrlPreviewSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 배너 광고 — 모달 상단 배치
-          if (_isBannerAdReady && _bannerAd != null) ...[
-            Center(
-              child: SizedBox(
-                width: _bannerAd!.size.width.toDouble(),
-                height: _bannerAd!.size.height.toDouble(),
-                child: AdWidget(ad: _bannerAd!),
-              ),
-            ),
-            const SizedBox(height: 12),
-          ],
+          // 배너 광고 — 모달 상단 배치 (로드 전에도 높이 확보)
+          SizedBox(
+            width: double.infinity,
+            height: 50,
+            child: (_isBannerAdReady && _bannerAd != null)
+                ? AdWidget(ad: _bannerAd!)
+                : const SizedBox.shrink(),
+          ),
+          const SizedBox(height: 12),
           // 시트 헤더
           Row(
             children: [

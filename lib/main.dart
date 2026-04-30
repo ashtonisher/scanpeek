@@ -421,7 +421,11 @@ class _ScannerPageState extends State<ScannerPage> with WidgetsBindingObserver {
   Future<void> _launchUrl(String url) async {
     final uri = Uri.parse(url);
     if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
+      final isHttp = uri.scheme == 'http' || uri.scheme == 'https';
+      await launchUrl(
+        uri,
+        mode: isHttp ? LaunchMode.inAppBrowserView : LaunchMode.externalApplication,
+      );
     }
   }
 
@@ -927,8 +931,10 @@ class _UrlPreviewSheetState extends State<UrlPreviewSheet> {
           ),
           const Divider(),
           const SizedBox(height: 16),
-          // 파비콘 + 도메인
-          Row(
+          // 파비콘 + 도메인 (탭하면 바로 열기)
+          GestureDetector(
+            onTap: widget.onOpen,
+            child: Row(
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(6),
@@ -977,6 +983,7 @@ class _UrlPreviewSheetState extends State<UrlPreviewSheet> {
                   ),
                 ),
             ],
+          ),
           ),
           const SizedBox(height: 8),
           // 검사 결과 인라인 표시

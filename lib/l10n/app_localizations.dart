@@ -189,7 +189,7 @@ abstract class AppLocalizations {
   /// No description provided for @safeOpenButton.
   ///
   /// In en, this message translates to:
-  /// **'🔍 Check Link'**
+  /// **'Check Link'**
   String get safeOpenButton;
 
   /// No description provided for @openAnywayButton.
@@ -203,6 +203,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Ignore Warning & Open'**
   String get ignoreAndOpen;
+
+  /// No description provided for @openLinkButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Link'**
+  String get openLinkButton;
 
   /// No description provided for @closeButton.
   ///

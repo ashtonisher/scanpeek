@@ -53,13 +53,16 @@ class AppLocalizationsKo extends AppLocalizations {
   String get checking => '검사 중...';
 
   @override
-  String get safeOpenButton => '🔍 링크 검사하기';
+  String get safeOpenButton => '링크 검사하기';
 
   @override
   String get openAnywayButton => '그냥 열기';
 
   @override
   String get ignoreAndOpen => '경고 무시하고 열기';
+
+  @override
+  String get openLinkButton => '링크 열기';
 
   @override
   String get closeButton => '닫기';

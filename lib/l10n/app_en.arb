@@ -19,9 +19,10 @@
     }
   },
   "checking": "Checking...",
-  "safeOpenButton": "🔍 Check Link",
+  "safeOpenButton": "Check Link",
   "openAnywayButton": "Open Anyway",
   "ignoreAndOpen": "Ignore Warning & Open",
+  "openLinkButton": "Open Link",
   "closeButton": "Close",
   "galleryNoQrFound": "No QR code found in this image.",
   "galleryAnalyzing": "Analyzing QR code..."

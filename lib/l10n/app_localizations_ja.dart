@@ -53,13 +53,16 @@ class AppLocalizationsJa extends AppLocalizations {
   String get checking => '確認中...';
 
   @override
-  String get safeOpenButton => '🔍 リンクを検査する';
+  String get safeOpenButton => 'リンクを検査する';
 
   @override
   String get openAnywayButton => 'そのまま開く';
 
   @override
   String get ignoreAndOpen => '警告を無視して開く';
+
+  @override
+  String get openLinkButton => 'リンクを開く';
 
   @override
   String get closeButton => '閉じる';

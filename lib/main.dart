@@ -1057,7 +1057,7 @@ class _UrlPreviewSheetState extends State<UrlPreviewSheet> {
             child: TextButton.icon(
               onPressed: widget.onOpen,
               icon: const Icon(Icons.open_in_browser),
-              label: Text(l10n.openAnywayButton),
+              label: Text(widget.onSafePreview == null ? l10n.openLinkButton : l10n.openAnywayButton),
               style: TextButton.styleFrom(foregroundColor: Colors.grey),
             ),
           ),

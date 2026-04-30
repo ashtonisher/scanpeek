@@ -53,13 +53,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get checking => '检查中...';
 
   @override
-  String get safeOpenButton => '🔍 检查链接';
+  String get safeOpenButton => '检查链接';
 
   @override
   String get openAnywayButton => '直接打开';
 
   @override
   String get ignoreAndOpen => '忽略警告并打开';
+
+  @override
+  String get openLinkButton => '打开链接';
 
   @override
   String get closeButton => '关闭';

@@ -1,11 +1,13 @@
 # ScanPeek
 
-QR코드 스캐너 앱. Google Safe Browsing API로 URL 안전 검사를 지원합니다.
+QR코드 & 바코드 스캐너 앱. Google Safe Browsing API로 URL 안전 검사를 지원합니다.
 
 ## 기능
 
-- QR코드 스캔
-- URL 스캔 시 도메인 미리보기
+- QR코드 / 바코드 즉시 스캔
+- 갤러리 이미지에서 QR코드 스캔
+- URL 스캔 시 도메인 미리보기 (탭으로 바로 열기)
+- 커스텀 스키마(앱 딥링크) 실행 지원
 - Google Safe Browsing API 연동 안전 검사
 - 위험 링크 경고 및 사용자 선택 이동
 - 크레딧 기반 안전 검사 (첫 설치 시 1개 무료, 광고 시청마다 충전)
@@ -36,11 +38,12 @@ flutter build appbundle --release
 ## 기술 스택
 
 - Flutter / Dart
-- [mobile_scanner](https://pub.dev/packages/mobile_scanner) — 카메라 스캔
+- [mobile_scanner](https://pub.dev/packages/mobile_scanner) — 카메라 스캔 및 이미지 분석
+- [image_picker](https://pub.dev/packages/image_picker) — 갤러리 이미지 선택
 - [google_mobile_ads](https://pub.dev/packages/google_mobile_ads) — AdMob 광고
 - [http](https://pub.dev/packages/http) — Safe Browsing API 통신
 - [shared_preferences](https://pub.dev/packages/shared_preferences) — 크레딧 로컬 저장
-- [url_launcher](https://pub.dev/packages/url_launcher) — 인앱 브라우저
+- [url_launcher](https://pub.dev/packages/url_launcher) — 인앱 브라우저 / 외부 앱 실행
 
 ## 주의사항
 

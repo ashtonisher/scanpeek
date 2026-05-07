@@ -871,6 +871,8 @@ class _UrlPreviewSheetState extends State<UrlPreviewSheet> {
 
     if (isSafe) {
       if (!mounted) return;
+      await Future.delayed(const Duration(milliseconds: 500));
+      if (!mounted) return;
       widget.onOpen();
     }
     // 위험하면 경고만 표시 — 사용자가 직접 닫기

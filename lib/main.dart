@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_zxing/flutter_zxing.dart' as zxing;
 import 'l10n/app_localizations.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:http/http.dart' as http;
@@ -214,11 +215,13 @@ class _ScannerPageState extends State<ScannerPage> with WidgetsBindingObserver {
       _analyzingImagePath = file.path;
     });
 
-    final capture = await _controller.analyzeImage(file.path);
+    final result = await zxing.zx.readBarcodeImagePathString(
+      file.path,
+      zxing.DecodeParams(tryHarder: true, tryRotate: true),
+    );
     if (!mounted) return;
 
-    final barcode = capture?.barcodes.firstOrNull;
-    if (barcode == null || barcode.rawValue == null) {
+    if (!result.isValid || result.text == null || result.text!.isEmpty) {
       setState(() {
         _isAnalyzing = false;
         _isAnalyzingFailed = true;
@@ -230,7 +233,7 @@ class _ScannerPageState extends State<ScannerPage> with WidgetsBindingObserver {
     setState(() => _isScanning = false);
     _controller.stop();
 
-    final value = barcode.rawValue!;
+    final value = result.text!;
     final valueLower = value.toLowerCase();
     final isHttpUrl =
         valueLower.startsWith('http://') || valueLower.startsWith('https://');
@@ -250,6 +253,7 @@ class _ScannerPageState extends State<ScannerPage> with WidgetsBindingObserver {
       _showTextResult(value);
     }
   }
+
 
   void _dismissGalleryOverlay() {
     setState(() {

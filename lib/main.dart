@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter_zxing/flutter_zxing.dart' as zxing;
 import 'l10n/app_localizations.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:http/http.dart' as http;
@@ -215,13 +214,11 @@ class _ScannerPageState extends State<ScannerPage> with WidgetsBindingObserver {
       _analyzingImagePath = file.path;
     });
 
-    final result = await zxing.zx.readBarcodeImagePathString(
-      file.path,
-      zxing.DecodeParams(tryHarder: true, tryRotate: true),
-    );
+    final capture = await _controller.analyzeImage(file.path);
     if (!mounted) return;
 
-    if (!result.isValid || result.text == null || result.text!.isEmpty) {
+    final barcode = capture?.barcodes.firstOrNull;
+    if (barcode == null || barcode.rawValue == null || barcode.rawValue!.isEmpty) {
       setState(() {
         _isAnalyzing = false;
         _isAnalyzingFailed = true;
@@ -233,7 +230,7 @@ class _ScannerPageState extends State<ScannerPage> with WidgetsBindingObserver {
     setState(() => _isScanning = false);
     _controller.stop();
 
-    final value = result.text!;
+    final value = barcode.rawValue!;
     final valueLower = value.toLowerCase();
     final isHttpUrl =
         valueLower.startsWith('http://') || valueLower.startsWith('https://');
@@ -253,7 +250,6 @@ class _ScannerPageState extends State<ScannerPage> with WidgetsBindingObserver {
       _showTextResult(value);
     }
   }
-
 
   void _dismissGalleryOverlay() {
     setState(() {
@@ -428,7 +424,9 @@ class _ScannerPageState extends State<ScannerPage> with WidgetsBindingObserver {
       final isHttp = uri.scheme == 'http' || uri.scheme == 'https';
       await launchUrl(
         uri,
-        mode: isHttp ? LaunchMode.inAppBrowserView : LaunchMode.externalApplication,
+        mode: isHttp
+            ? LaunchMode.inAppBrowserView
+            : LaunchMode.externalApplication,
       );
     }
   }
@@ -712,7 +710,10 @@ class _GalleryAnalyzingOverlayState extends State<_GalleryAnalyzingOverlay>
                                 vertical: 14,
                               ),
                             ),
-                            child: const Text('닫기', style: TextStyle(fontSize: 16)),
+                            child: const Text(
+                              '닫기',
+                              style: TextStyle(fontSize: 16),
+                            ),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -726,7 +727,10 @@ class _GalleryAnalyzingOverlayState extends State<_GalleryAnalyzingOverlay>
                                 vertical: 14,
                               ),
                             ),
-                            child: const Text('갤러리', style: TextStyle(fontSize: 16)),
+                            child: const Text(
+                              '갤러리',
+                              style: TextStyle(fontSize: 16),
+                            ),
                           ),
                         ),
                       ],
@@ -941,55 +945,57 @@ class _UrlPreviewSheetState extends State<UrlPreviewSheet> {
           GestureDetector(
             onTap: widget.onOpen,
             child: Row(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(6),
-                child: Image.network(
-                  'https://www.google.com/s2/favicons?domain=${widget.domain}&sz=64',
-                  width: 36,
-                  height: 36,
-                  errorBuilder: (_, _, _) =>
-                      const Icon(Icons.public, size: 36, color: Colors.grey),
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(6),
+                  child: Image.network(
+                    'https://www.google.com/s2/favicons?domain=${widget.domain}&sz=64',
+                    width: 36,
+                    height: 36,
+                    errorBuilder: (_, _, _) =>
+                        const Icon(Icons.public, size: 36, color: Colors.grey),
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  widget.domain,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              // 안전/위험 배지
-              if (_hasResult)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: _isSafe ? Colors.green.shade50 : Colors.red.shade50,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: _isSafe ? Colors.green : Colors.red,
-                    ),
-                  ),
+                const SizedBox(width: 12),
+                Expanded(
                   child: Text(
-                    _isSafe ? l10n.safe : l10n.danger,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: _isSafe
-                          ? Colors.green.shade700
-                          : Colors.red.shade700,
-                      fontWeight: FontWeight.w600,
+                    widget.domain,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
                     ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-            ],
-          ),
+                // 안전/위험 배지
+                if (_hasResult)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _isSafe
+                          ? Colors.green.shade50
+                          : Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: _isSafe ? Colors.green : Colors.red,
+                      ),
+                    ),
+                    child: Text(
+                      _isSafe ? l10n.safe : l10n.danger,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: _isSafe
+                            ? Colors.green.shade700
+                            : Colors.red.shade700,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
           const SizedBox(height: 8),
           // 검사 결과 인라인 표시
@@ -1063,7 +1069,11 @@ class _UrlPreviewSheetState extends State<UrlPreviewSheet> {
             child: TextButton.icon(
               onPressed: widget.onOpen,
               icon: const Icon(Icons.open_in_browser),
-              label: Text(widget.onSafePreview == null ? l10n.openLinkButton : l10n.openAnywayButton),
+              label: Text(
+                widget.onSafePreview == null
+                    ? l10n.openLinkButton
+                    : l10n.openAnywayButton,
+              ),
               style: TextButton.styleFrom(foregroundColor: Colors.grey),
             ),
           ),

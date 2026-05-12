@@ -9,7 +9,7 @@ class AppLocalizationsJa extends AppLocalizations {
   AppLocalizationsJa([String locale = 'ja']) : super(locale);
 
   @override
-  String get scanGuide => 'QRコードを枠内に合わせてください';
+  String get scanGuide => 'QRコードをスキャンするか、QR画像を選択してください。';
 
   @override
   String get adNotice => '広告を視聴後にリンクを開けます。';
@@ -72,4 +72,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get galleryAnalyzing => 'QRコードを解析中...';
+
+  @override
+  String get galleryButton => 'ギャラリー';
 }

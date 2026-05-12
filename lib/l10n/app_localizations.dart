@@ -105,7 +105,7 @@ abstract class AppLocalizations {
   /// No description provided for @scanGuide.
   ///
   /// In en, this message translates to:
-  /// **'Align QR code within the frame'**
+  /// **'Scan a QR code or select a QR image.'**
   String get scanGuide;
 
   /// No description provided for @adNotice.
@@ -227,6 +227,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Analyzing QR code...'**
   String get galleryAnalyzing;
+
+  /// No description provided for @galleryButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Gallery'**
+  String get galleryButton;
 }
 
 class _AppLocalizationsDelegate

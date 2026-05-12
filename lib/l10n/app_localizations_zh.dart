@@ -9,7 +9,7 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
-  String get scanGuide => '请将二维码对准框内';
+  String get scanGuide => '扫描二维码或选择二维码图片。';
 
   @override
   String get adNotice => '观看广告后即可打开链接。';
@@ -72,4 +72,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get galleryAnalyzing => '正在解析二维码...';
+
+  @override
+  String get galleryButton => '相册';
 }

@@ -1,6 +1,6 @@
 {
   "@@locale": "ja",
-  "scanGuide": "QRコードを枠内に合わせてください",
+  "scanGuide": "QRコードをスキャンするか、QR画像を選択してください。",
   "adNotice": "広告を視聴後にリンクを開けます。",
   "urlSheetTitle": "URLスキャン結果",
   "textSheetTitle": "スキャン結果",
@@ -25,5 +25,6 @@
   "openLinkButton": "リンクを開く",
   "closeButton": "閉じる",
   "galleryNoQrFound": "画像からQRコードが見つかりませんでした。",
-  "galleryAnalyzing": "QRコードを解析中..."
+  "galleryAnalyzing": "QRコードを解析中...",
+  "galleryButton": "ギャラリー"
 }

@@ -9,7 +9,7 @@ class AppLocalizationsKo extends AppLocalizations {
   AppLocalizationsKo([String locale = 'ko']) : super(locale);
 
   @override
-  String get scanGuide => 'QR 코드를 화면에 맞춰주세요';
+  String get scanGuide => 'QR코드를 스캔하거나 QR 이미지를 선택하세요.';
 
   @override
   String get adNotice => '광고 시청 후 이동할 수 있습니다.';
@@ -72,4 +72,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get galleryAnalyzing => 'QR코드 분석 중...';
+
+  @override
+  String get galleryButton => '갤러리';
 }

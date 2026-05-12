@@ -1,6 +1,6 @@
 {
   "@@locale": "zh",
-  "scanGuide": "请将二维码对准框内",
+  "scanGuide": "扫描二维码或选择二维码图片。",
   "adNotice": "观看广告后即可打开链接。",
   "urlSheetTitle": "URL 扫描结果",
   "textSheetTitle": "扫描结果",
@@ -25,5 +25,6 @@
   "openLinkButton": "打开链接",
   "closeButton": "关闭",
   "galleryNoQrFound": "在此图片中找不到二维码。",
-  "galleryAnalyzing": "正在解析二维码..."
+  "galleryAnalyzing": "正在解析二维码...",
+  "galleryButton": "相册"
 }

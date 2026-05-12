@@ -1,6 +1,6 @@
 {
   "@@locale": "en",
-  "scanGuide": "Align QR code within the frame",
+  "scanGuide": "Scan a QR code or select a QR image.",
   "adNotice": "An ad will play before opening the link.",
   "urlSheetTitle": "URL Scan Result",
   "textSheetTitle": "Scan Result",
@@ -25,5 +25,6 @@
   "openLinkButton": "Open Link",
   "closeButton": "Close",
   "galleryNoQrFound": "No QR code found in this image.",
-  "galleryAnalyzing": "Analyzing QR code..."
+  "galleryAnalyzing": "Analyzing QR code...",
+  "galleryButton": "Gallery"
 }

@@ -9,7 +9,7 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get scanGuide => 'Align QR code within the frame';
+  String get scanGuide => 'Scan a QR code or select a QR image.';
 
   @override
   String get adNotice => 'An ad will play before opening the link.';
@@ -72,4 +72,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get galleryAnalyzing => 'Analyzing QR code...';
+
+  @override
+  String get galleryButton => 'Gallery';
 }

@@ -474,11 +474,6 @@ class _ScannerPageState extends State<ScannerPage> with WidgetsBindingObserver {
             ],
           ),
           actions: [
-            // 갤러리에서 이미지 선택
-            IconButton(
-              icon: const Icon(Icons.photo_library, color: Colors.white),
-              onPressed: _pickImageFromGallery,
-            ),
             // 플래시 토글
             IconButton(
               icon: const Icon(Icons.flash_on, color: Colors.white),
@@ -520,6 +515,30 @@ class _ScannerPageState extends State<ScannerPage> with WidgetsBindingObserver {
                         onDismiss: _dismissGalleryOverlay,
                         onRetry: _pickImageFromGallery,
                       ),
+                    // 갤러리 버튼 — QR 박스 하단(중앙+125px)과 화면 하단의 중간
+                    Positioned.fill(
+                      child: Align(
+                        alignment: const Alignment(0, 0.75),
+                        child: GestureDetector(
+                          onTap: _pickImageFromGallery,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+                            decoration: BoxDecoration(
+                              color: Colors.indigoAccent,
+                              borderRadius: BorderRadius.circular(24),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.photo_library, color: Colors.white, size: 22),
+                                const SizedBox(width: 8),
+                                Text(AppLocalizations.of(context)!.galleryButton, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -562,12 +581,19 @@ class _ScanOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Container(
-        width: 250,
-        height: 250,
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.indigoAccent, width: 3),
-          borderRadius: BorderRadius.circular(12),
+      child: ShaderMask(
+        shaderCallback: (bounds) => const LinearGradient(
+          colors: [Colors.indigoAccent, Colors.indigo],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ).createShader(bounds),
+        child: Container(
+          width: 250,
+          height: 250,
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.white, width: 3),
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       ),
     );

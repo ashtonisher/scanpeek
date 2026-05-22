@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'l10n/app_localizations.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:http/http.dart' as http;
@@ -55,7 +56,6 @@ class _ScannerPageState extends State<ScannerPage> with WidgetsBindingObserver {
   // 하단 배너 광고 — 스캔 화면에 항상 표시
   BannerAd? _bannerAd;
   bool _isBannerAdReady = false;
-
   // 상단 배너 광고 — 바텀시트가 열릴 때만 표시 (하단 배너가 가려지는 보완)
   BannerAd? _topBannerAd;
   bool _isTopBannerAdReady = false;
@@ -927,6 +927,20 @@ class _UrlPreviewSheetState extends State<UrlPreviewSheet> {
     }
   }
 
+  Future<void> _copyUrlToClipboard(AppLocalizations l10n) async {
+    await Clipboard.setData(ClipboardData(text: widget.url));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(l10n.linkCopiedMessage),
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -994,6 +1008,17 @@ class _UrlPreviewSheetState extends State<UrlPreviewSheet> {
                   ),
                 ),
                 // 안전/위험 배지
+                const SizedBox(width: 4),
+                IconButton(
+                  tooltip: l10n.copyLinkTooltip,
+                  visualDensity: VisualDensity.compact,
+                  constraints: const BoxConstraints.tightFor(
+                    width: 36,
+                    height: 36,
+                  ),
+                  icon: const Icon(Icons.content_copy, size: 18),
+                  onPressed: () => _copyUrlToClipboard(l10n),
+                ),
                 if (_hasResult)
                   Container(
                     padding: const EdgeInsets.symmetric(

@@ -74,5 +74,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get galleryAnalyzing => 'Analyzing QR code...';
 
   @override
+  String get copyLinkTooltip => 'Copy link';
+
+  @override
+  String get linkCopiedMessage => 'Link copied.';
+
+  @override
   String get galleryButton => 'Gallery';
 }

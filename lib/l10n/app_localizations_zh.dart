@@ -74,5 +74,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get galleryAnalyzing => '正在解析二维码...';
 
   @override
+  String get copyLinkTooltip => '复制链接';
+
+  @override
+  String get linkCopiedMessage => '已复制链接。';
+
+  @override
   String get galleryButton => '相册';
 }

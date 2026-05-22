@@ -74,5 +74,11 @@ class AppLocalizationsKo extends AppLocalizations {
   String get galleryAnalyzing => 'QR코드 분석 중...';
 
   @override
+  String get copyLinkTooltip => '링크 복사';
+
+  @override
+  String get linkCopiedMessage => '링크를 복사했어요.';
+
+  @override
   String get galleryButton => '갤러리';
 }

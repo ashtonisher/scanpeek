@@ -26,5 +26,7 @@
   "closeButton": "Close",
   "galleryNoQrFound": "No QR code found in this image.",
   "galleryAnalyzing": "Analyzing QR code...",
+  "copyLinkTooltip": "Copy link",
+  "linkCopiedMessage": "Link copied.",
   "galleryButton": "Gallery"
 }

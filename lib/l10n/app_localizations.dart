@@ -228,6 +228,18 @@ abstract class AppLocalizations {
   /// **'Analyzing QR code...'**
   String get galleryAnalyzing;
 
+  /// No description provided for @copyLinkTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy link'**
+  String get copyLinkTooltip;
+
+  /// No description provided for @linkCopiedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Link copied.'**
+  String get linkCopiedMessage;
+
   /// No description provided for @galleryButton.
   ///
   /// In en, this message translates to:

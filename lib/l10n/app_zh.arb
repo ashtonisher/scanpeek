@@ -26,5 +26,7 @@
   "closeButton": "关闭",
   "galleryNoQrFound": "在此图片中找不到二维码。",
   "galleryAnalyzing": "正在解析二维码...",
+  "copyLinkTooltip": "复制链接",
+  "linkCopiedMessage": "已复制链接。",
   "galleryButton": "相册"
 }

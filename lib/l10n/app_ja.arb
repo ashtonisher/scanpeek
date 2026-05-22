@@ -26,5 +26,7 @@
   "closeButton": "閉じる",
   "galleryNoQrFound": "画像からQRコードが見つかりませんでした。",
   "galleryAnalyzing": "QRコードを解析中...",
+  "copyLinkTooltip": "リンクをコピー",
+  "linkCopiedMessage": "リンクをコピーしました。",
   "galleryButton": "ギャラリー"
 }

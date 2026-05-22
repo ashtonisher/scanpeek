@@ -74,5 +74,11 @@ class AppLocalizationsJa extends AppLocalizations {
   String get galleryAnalyzing => 'QRコードを解析中...';
 
   @override
+  String get copyLinkTooltip => 'リンクをコピー';
+
+  @override
+  String get linkCopiedMessage => 'リンクをコピーしました。';
+
+  @override
   String get galleryButton => 'ギャラリー';
 }

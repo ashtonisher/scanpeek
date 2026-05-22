@@ -26,5 +26,7 @@
   "closeButton": "닫기",
   "galleryNoQrFound": "이미지에서 QR코드를 찾을 수 없어요.",
   "galleryAnalyzing": "QR코드 분석 중...",
+  "copyLinkTooltip": "링크 복사",
+  "linkCopiedMessage": "링크를 복사했어요.",
   "galleryButton": "갤러리"
 }

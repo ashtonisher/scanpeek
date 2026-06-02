@@ -66,6 +66,9 @@ class _ScannerPageState extends State<ScannerPage> with WidgetsBindingObserver {
   int _scanCount = 0;
   bool _isShowingAdForOpen = false;
 
+  // 보상형 광고 — 안전 검사 크레딧 소진 시 시청 (앱 시작 시 미리 로드)
+  RewardedAd? _rewardedAd;
+
   // 갤러리 이미지 분석 상태
   bool _isAnalyzing = false;
   bool _isAnalyzingFailed = false;
@@ -83,6 +86,7 @@ class _ScannerPageState extends State<ScannerPage> with WidgetsBindingObserver {
     _loadBannerAd();
     _loadTopBannerAd();
     _loadInterstitialAd();
+    _loadRewardedAd();
     _loadCredits();
   }
 
@@ -334,44 +338,65 @@ class _ScannerPageState extends State<ScannerPage> with WidgetsBindingObserver {
     });
   }
 
-  // 크레딧 있으면 즉시 검사, 없으면 보상형 광고 후 크레딧 2개 지급 후 검사
+  // 보상형 광고 미리 로드 — 시청 후 다음 노출을 위해 다시 호출
+  void _loadRewardedAd() {
+    RewardedAd.load(
+      adUnitId: rewardedAdUnitId,
+      request: const AdRequest(),
+      rewardedAdLoadCallback: RewardedAdLoadCallback(
+        onAdLoaded: (ad) => _rewardedAd = ad,
+        onAdFailedToLoad: (error) {
+          debugPrint('보상형 광고 로드 실패: ${error.message}');
+          _rewardedAd = null;
+        },
+      ),
+    );
+  }
+
+  // 크레딧 있으면 즉시 검사, 없으면 보상형 광고 후 크레딧 3개 지급 후 검사
   void _handleSafePreview(String url, VoidCallback onAdDone) {
     if (_safeCredits > 0) {
       // 크레딧 차감 후 즉시 검사
       _saveCredits(_safeCredits - 1);
       onAdDone();
     } else {
-      // 크레딧 없음 → 광고 시청 후 크레딧 2개 지급 → 1개 차감 후 검사
+      // 크레딧 없음 → 광고 시청 후 크레딧 3개 지급 → 1개 차감 후 검사 (잔액 2개)
       _showRewardedAdForSheet(() {
-        _saveCredits(2 - 1); // 2개 지급 후 1개 즉시 사용
+        _saveCredits(_safeCredits + 3 - 1); // 3개 지급 후 1개 즉시 사용
         onAdDone();
       });
     }
   }
 
-  // 보상형 광고 표시 → 완료 후 onAdDone 콜백 실행
+  // 미리 로드된 보상형 광고 표시 → 완료 후 onAdDone 콜백 실행
+  // 광고가 준비 안 됐거나 표시 실패 시 무료로 검사 진행 (관대 정책)
   void _showRewardedAdForSheet(VoidCallback onAdDone) {
-    RewardedAd.load(
-      adUnitId: rewardedAdUnitId,
-      request: const AdRequest(),
-      rewardedAdLoadCallback: RewardedAdLoadCallback(
-        onAdLoaded: (ad) {
-          ad.fullScreenContentCallback = FullScreenContentCallback(
-            onAdDismissedFullScreenContent: (ad) {
-              ad.dispose();
-              onAdDone();
-            },
-          );
-          // onUserEarnedReward는 리워드 지급 시점, onAdDismissedFullScreenContent는 닫힘 시점
-          // 로직은 반드시 onAdDismissedFullScreenContent에서만 처리 — 이중 호출 방지
-          ad.show(onUserEarnedReward: (adItem, reward) {});
-        },
-        onAdFailedToLoad: (error) {
-          debugPrint('보상형 광고 로드 실패: ${error.message}');
-          onAdDone();
-        },
-      ),
+    final ad = _rewardedAd;
+    if (ad == null) {
+      // 광고 미준비 → 무료 검사 + 다음 노출 위해 재로드
+      onAdDone();
+      _loadRewardedAd();
+      return;
+    }
+    _rewardedAd = null; // 한 번 표시한 광고는 재사용 불가
+
+    ad.fullScreenContentCallback = FullScreenContentCallback(
+      // onUserEarnedReward는 리워드 지급 시점, onAdDismissedFullScreenContent는 닫힘 시점
+      // 로직은 반드시 닫힘/실패 콜백에서만 처리 — 이중 호출 방지
+      onAdDismissedFullScreenContent: (ad) {
+        ad.dispose();
+        onAdDone();
+        _loadRewardedAd();
+      },
+      // 표시 실패 시에도 반드시 onAdDone 호출 — 미호출 시 검사 버튼이 멈춤
+      onAdFailedToShowFullScreenContent: (ad, error) {
+        debugPrint('보상형 광고 표시 실패: ${error.message}');
+        ad.dispose();
+        onAdDone();
+        _loadRewardedAd();
+      },
     );
+    ad.show(onUserEarnedReward: (adItem, reward) {});
   }
 
   // 텍스트/바코드 스캔 결과 바텀시트 표시
@@ -449,6 +474,7 @@ class _ScannerPageState extends State<ScannerPage> with WidgetsBindingObserver {
     _bannerAd?.dispose();
     _topBannerAd?.dispose();
     _interstitialAd?.dispose();
+    _rewardedAd?.dispose();
     super.dispose();
   }
 

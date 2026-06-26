@@ -222,7 +222,9 @@ class _ScannerPageState extends State<ScannerPage> with WidgetsBindingObserver {
     if (!mounted) return;
 
     final barcode = capture?.barcodes.firstOrNull;
-    if (barcode == null || barcode.rawValue == null || barcode.rawValue!.isEmpty) {
+    if (barcode == null ||
+        barcode.rawValue == null ||
+        barcode.rawValue!.isEmpty) {
       setState(() {
         _isAnalyzing = false;
         _isAnalyzingFailed = true;
@@ -542,29 +544,45 @@ class _ScannerPageState extends State<ScannerPage> with WidgetsBindingObserver {
                         onRetry: _pickImageFromGallery,
                       ),
                     // 갤러리 버튼 — QR 박스 하단(중앙+125px)과 화면 하단의 중간
-                    Positioned.fill(
-                      child: Align(
-                        alignment: const Alignment(0, 0.75),
-                        child: GestureDetector(
-                          onTap: _pickImageFromGallery,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
-                            decoration: BoxDecoration(
-                              color: Colors.indigoAccent,
-                              borderRadius: BorderRadius.circular(24),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Icons.photo_library, color: Colors.white, size: 22),
-                                const SizedBox(width: 8),
-                                Text(AppLocalizations.of(context)!.galleryButton, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
-                              ],
+                    if (!((_isAnalyzing || _isAnalyzingFailed) &&
+                        _analyzingImagePath != null))
+                      Positioned.fill(
+                        child: Align(
+                          alignment: const Alignment(0, 0.75),
+                          child: GestureDetector(
+                            onTap: _pickImageFromGallery,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 9,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.indigoAccent,
+                                borderRadius: BorderRadius.circular(24),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Icons.photo_library,
+                                    color: Colors.white,
+                                    size: 22,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    AppLocalizations.of(context)!.galleryButton,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
                   ],
                 ),
               ),

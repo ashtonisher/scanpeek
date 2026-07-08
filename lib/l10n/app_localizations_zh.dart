@@ -50,6 +50,12 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get checkUnavailable => '今天的链接检查次数已用完。';
+
+  @override
+  String get checkError => '链接检查失败，请稍后重试。';
+
+  @override
   String get checking => '检查中...';
 
   @override

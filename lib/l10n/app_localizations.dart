@@ -180,6 +180,18 @@ abstract class AppLocalizations {
   /// **'{threat} detected.\nVisiting this site is not recommended.'**
   String safeBrowsingResultDanger(String threat);
 
+  /// No description provided for @checkUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve used up today\'s link checks.'**
+  String get checkUnavailable;
+
+  /// No description provided for @checkError.
+  ///
+  /// In en, this message translates to:
+  /// **'Link check failed. Please try again later.'**
+  String get checkError;
+
   /// No description provided for @checking.
   ///
   /// In en, this message translates to:

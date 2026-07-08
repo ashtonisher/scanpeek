@@ -18,6 +18,8 @@
       "threat": { "type": "String" }
     }
   },
+  "checkUnavailable": "本日のリンク検査の回数を使い切りました。",
+  "checkError": "リンク検査に失敗しました。しばらくして再度お試しください。",
   "checking": "確認中...",
   "safeOpenButton": "リンクを検査する",
   "openAnywayButton": "そのまま開く",

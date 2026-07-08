@@ -831,6 +831,75 @@ class _GalleryAnalyzingOverlayState extends State<_GalleryAnalyzingOverlay>
   }
 }
 
+// ── Safe Browsing 캐시 / 하루 호출 제한 ──────────────────────────
+// 동일 링크의 반복 검사로 인한 무료 티어 쿼터 소모를 막는다.
+const String _safeCachePrefix = 'safe_cache_'; // 캐시 키 접두사 (+ url)
+const String _safeCountPrefix = 'safe_calls_'; // 하루 호출 카운트 키 접두사 (+ 날짜)
+const Duration _safeCacheTtl = Duration(hours: 24); // 안전 결과 캐시 유효기간
+const Duration _dangerCacheTtl = Duration(days: 7); // 위험 결과 캐시 유효기간
+const int _dailyApiCap = 200; // 하루 실제 API 호출 상한 (백스톱)
+
+class _SafeCacheEntry {
+  final bool isSafe;
+  final String? threatType;
+  const _SafeCacheEntry(this.isSafe, this.threatType);
+}
+
+String _todayCountKey() {
+  final now = DateTime.now();
+  return '$_safeCountPrefix${now.year}-${now.month}-${now.day}';
+}
+
+// 유효한 캐시가 있으면 반환, 없거나 만료면 null
+_SafeCacheEntry? _readSafeCache(SharedPreferences prefs, String url) {
+  final raw = prefs.getString(_safeCachePrefix + url);
+  if (raw == null) return null;
+  try {
+    final m = jsonDecode(raw) as Map<String, dynamic>;
+    final isSafe = m['safe'] as bool;
+    final ts = DateTime.fromMillisecondsSinceEpoch(m['ts'] as int);
+    final ttl = isSafe ? _safeCacheTtl : _dangerCacheTtl;
+    if (DateTime.now().difference(ts) > ttl) {
+      prefs.remove(_safeCachePrefix + url);
+      return null;
+    }
+    return _SafeCacheEntry(isSafe, m['threat'] as String?);
+  } catch (_) {
+    return null;
+  }
+}
+
+Future<void> _writeSafeCache(
+  SharedPreferences prefs,
+  String url,
+  bool isSafe,
+  String? threat,
+) async {
+  await prefs.setString(
+    _safeCachePrefix + url,
+    jsonEncode({
+      'safe': isSafe,
+      'threat': threat,
+      'ts': DateTime.now().millisecondsSinceEpoch,
+    }),
+  );
+}
+
+bool _underDailyCap(SharedPreferences prefs) {
+  return (prefs.getInt(_todayCountKey()) ?? 0) < _dailyApiCap;
+}
+
+Future<void> _incrementDailyCount(SharedPreferences prefs) async {
+  final key = _todayCountKey();
+  await prefs.setInt(key, (prefs.getInt(key) ?? 0) + 1);
+  // 지난 날짜의 카운트 키 정리
+  for (final k in prefs.getKeys()) {
+    if (k.startsWith(_safeCountPrefix) && k != key) {
+      await prefs.remove(k);
+    }
+  }
+}
+
 // URL 스캔 결과 바텀시트
 // - 이동하기: 즉시 브라우저
 // - 안전하게 이동하기(강조): 보상형 광고 → Safe Browsing 검사 → 인라인 결과 표시
@@ -863,12 +932,14 @@ class _UrlPreviewSheetState extends State<UrlPreviewSheet> {
   bool _hasResult = false; // 결과 있음
   bool _isSafe = true;
   String? _threatType;
+  bool _checkUnavailable = false; // 하루 호출 한도 소진으로 검사 불가
+  bool _checkError = false; // Safe Browsing API 오류로 검사 실패
 
   @override
   void initState() {
     super.initState();
     _bannerAd = BannerAd(
-      adUnitId: bannerAdUnitId,
+      adUnitId: _bannerAdUnitId,
       size: AdSize.banner,
       request: const AdRequest(),
       listener: BannerAdListener(
@@ -885,9 +956,26 @@ class _UrlPreviewSheetState extends State<UrlPreviewSheet> {
   }
 
   // 보상형 광고 요청 → 완료 후 Safe Browsing 검사
-  void _requestSafePreview() {
+  Future<void> _requestSafePreview() async {
     // 광고 시청 중이든 크레딧 사용 중이든 즉시 버튼 비활성화
-    setState(() => _isChecking = true);
+    setState(() {
+      _isChecking = true;
+      _checkUnavailable = false;
+      _checkError = false;
+    });
+
+    // 광고를 보여주기 전에 미리 확인 — 캐시에 없고 하루 한도까지 초과했다면
+    // 검사가 불가능하므로, 광고 없이 바로 소진 안내를 띄운다.
+    final prefs = await SharedPreferences.getInstance();
+    if (_readSafeCache(prefs, widget.url) == null && !_underDailyCap(prefs)) {
+      if (!mounted) return;
+      setState(() {
+        _isChecking = false;
+        _checkUnavailable = true;
+      });
+      return;
+    }
+
     widget.onSafePreview!(() => _runSafeBrowsing());
   }
 
@@ -897,10 +985,32 @@ class _UrlPreviewSheetState extends State<UrlPreviewSheet> {
     setState(() {
       _isChecking = true;
       _hasResult = false;
+      _checkUnavailable = false;
+      _checkError = false;
     });
+
+    final prefs = await SharedPreferences.getInstance();
+
+    // 1) 캐시 조회 — 유효한 결과가 있으면 API 호출 없이 즉시 반환
+    final cached = _readSafeCache(prefs, widget.url);
+    if (cached != null) {
+      await _applyResult(cached.isSafe, cached.threatType);
+      return;
+    }
+
+    // 2) 하루 호출 상한 확인 — 초과 시 "검사 기회 소진" 안내
+    if (!_underDailyCap(prefs)) {
+      if (!mounted) return;
+      setState(() {
+        _isChecking = false;
+        _checkUnavailable = true;
+      });
+      return;
+    }
 
     bool isSafe = true;
     String? threatType;
+    bool apiSucceeded = false;
 
     try {
       final response = await http.post(
@@ -929,6 +1039,7 @@ class _UrlPreviewSheetState extends State<UrlPreviewSheet> {
         }),
       );
       if (response.statusCode == 200) {
+        apiSucceeded = true;
         final data = jsonDecode(response.body);
         if (data['matches'] != null && (data['matches'] as List).isNotEmpty) {
           isSafe = false;
@@ -936,9 +1047,28 @@ class _UrlPreviewSheetState extends State<UrlPreviewSheet> {
         }
       }
     } catch (_) {
-      // 네트워크 오류 시 안전으로 처리
+      // 네트워크/API 오류 — 아래에서 검사 불가 처리
     }
 
+    // API 호출 실패(네트워크 오류·비정상 응답) 시 에러 안내
+    if (!apiSucceeded) {
+      if (!mounted) return;
+      setState(() {
+        _isChecking = false;
+        _checkError = true;
+      });
+      return;
+    }
+
+    // 성공한 호출만 카운트 증가 + 결과 캐시 저장
+    await _incrementDailyCount(prefs);
+    await _writeSafeCache(prefs, widget.url, isSafe, threatType);
+
+    await _applyResult(isSafe, threatType);
+  }
+
+  // 검사 결과를 화면에 반영하고, 안전하면 링크를 연다
+  Future<void> _applyResult(bool isSafe, String? threatType) async {
     if (!mounted) return;
     setState(() {
       _isChecking = false;
@@ -1137,9 +1267,46 @@ class _UrlPreviewSheetState extends State<UrlPreviewSheet> {
               ),
             ],
           ],
+          // 하루 검사 기회 소진으로 검사 불가 안내
+          if (_checkUnavailable) ...[
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.amber.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.amber.shade200),
+              ),
+              child: Text(
+                l10n.checkUnavailable,
+                style: TextStyle(fontSize: 13, color: Colors.amber.shade900),
+              ),
+            ),
+          ],
+          // Safe Browsing API 오류로 검사 실패 안내
+          if (_checkError) ...[
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.grey.shade300),
+              ),
+              child: Text(
+                l10n.checkError,
+                style: TextStyle(fontSize: 13, color: Colors.grey.shade800),
+              ),
+            ),
+          ],
           const SizedBox(height: 20),
           // 안전하게 이동하기 — 강조 버튼 (결과 없을 때, 커스텀 스키마 아닐 때만 표시)
-          if (!_hasResult && widget.onSafePreview != null)
+          if (!_hasResult &&
+              !_checkUnavailable &&
+              !_checkError &&
+              widget.onSafePreview != null)
             SizedBox(
               width: double.infinity,
               child: FilledButton.icon(

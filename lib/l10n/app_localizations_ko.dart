@@ -50,6 +50,12 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String get checkUnavailable => '오늘 링크 검사 기회를 모두 사용했어요.';
+
+  @override
+  String get checkError => '링크 검사에 실패했어요. 잠시 후 다시 시도해 주세요.';
+
+  @override
   String get checking => '검사 중...';
 
   @override

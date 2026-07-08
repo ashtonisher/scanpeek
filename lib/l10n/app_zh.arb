@@ -18,6 +18,8 @@
       "threat": { "type": "String" }
     }
   },
+  "checkUnavailable": "今天的链接检查次数已用完。",
+  "checkError": "链接检查失败，请稍后重试。",
   "checking": "检查中...",
   "safeOpenButton": "检查链接",
   "openAnywayButton": "直接打开",

@@ -50,6 +50,12 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get checkUnavailable => 'You\'ve used up today\'s link checks.';
+
+  @override
+  String get checkError => 'Link check failed. Please try again later.';
+
+  @override
   String get checking => 'Checking...';
 
   @override

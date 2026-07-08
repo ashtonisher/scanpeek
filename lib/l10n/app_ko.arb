@@ -18,6 +18,8 @@
       "threat": { "type": "String" }
     }
   },
+  "checkUnavailable": "오늘 링크 검사 기회를 모두 사용했어요.",
+  "checkError": "링크 검사에 실패했어요. 잠시 후 다시 시도해 주세요.",
   "checking": "검사 중...",
   "safeOpenButton": "링크 검사하기",
   "openAnywayButton": "그냥 열기",

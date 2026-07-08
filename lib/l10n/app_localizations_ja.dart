@@ -50,6 +50,12 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get checkUnavailable => '本日のリンク検査の回数を使い切りました。';
+
+  @override
+  String get checkError => 'リンク検査に失敗しました。しばらくして再度お試しください。';
+
+  @override
   String get checking => '確認中...';
 
   @override

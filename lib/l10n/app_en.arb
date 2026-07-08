@@ -18,6 +18,8 @@
       "threat": { "type": "String" }
     }
   },
+  "checkUnavailable": "You've used up today's link checks.",
+  "checkError": "Link check failed. Please try again later.",
   "checking": "Checking...",
   "safeOpenButton": "Check Link",
   "openAnywayButton": "Open Anyway",

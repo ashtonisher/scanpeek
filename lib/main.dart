@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'l10n/app_localizations.dart';
@@ -11,6 +12,19 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'config.dart';
+
+// AdMob 광고 유닛 ID
+// debug 빌드(별도 패키지 com.gubog.scanpeek.debug)에서는 실광고 유닛이 매칭되지
+// 않으므로, 구글 공식 테스트 광고 ID를 사용한다. 릴리스에서는 config.dart의 실 ID.
+const _testBannerAdUnitId = 'ca-app-pub-3940256099942544/6300978111';
+const _testInterstitialAdUnitId = 'ca-app-pub-3940256099942544/1033173712';
+const _testRewardedAdUnitId = 'ca-app-pub-3940256099942544/5224354917';
+
+String get _bannerAdUnitId => kDebugMode ? _testBannerAdUnitId : bannerAdUnitId;
+String get _interstitialAdUnitId =>
+    kDebugMode ? _testInterstitialAdUnitId : interstitialAdUnitId;
+String get _rewardedAdUnitId =>
+    kDebugMode ? _testRewardedAdUnitId : rewardedAdUnitId;
 
 void main() {
   // Flutter 엔진 초기화 (카메라 같은 네이티브 기능 사용 전 필수)
@@ -124,7 +138,7 @@ class _ScannerPageState extends State<ScannerPage> with WidgetsBindingObserver {
 
   void _loadBannerAd() {
     _bannerAd = BannerAd(
-      adUnitId: bannerAdUnitId,
+      adUnitId: _bannerAdUnitId,
       size: AdSize.banner,
       request: const AdRequest(),
       listener: BannerAdListener(
@@ -136,7 +150,7 @@ class _ScannerPageState extends State<ScannerPage> with WidgetsBindingObserver {
 
   void _loadTopBannerAd() {
     _topBannerAd = BannerAd(
-      adUnitId: bannerAdUnitId,
+      adUnitId: _bannerAdUnitId,
       size: AdSize.banner,
       request: const AdRequest(),
       listener: BannerAdListener(
@@ -148,7 +162,7 @@ class _ScannerPageState extends State<ScannerPage> with WidgetsBindingObserver {
 
   void _loadInterstitialAd() {
     InterstitialAd.load(
-      adUnitId: interstitialAdUnitId,
+      adUnitId: _interstitialAdUnitId,
       request: const AdRequest(),
       adLoadCallback: InterstitialAdLoadCallback(
         onAdLoaded: (ad) {
@@ -343,7 +357,7 @@ class _ScannerPageState extends State<ScannerPage> with WidgetsBindingObserver {
   // 보상형 광고 미리 로드 — 시청 후 다음 노출을 위해 다시 호출
   void _loadRewardedAd() {
     RewardedAd.load(
-      adUnitId: rewardedAdUnitId,
+      adUnitId: _rewardedAdUnitId,
       request: const AdRequest(),
       rewardedAdLoadCallback: RewardedAdLoadCallback(
         onAdLoaded: (ad) => _rewardedAd = ad,
